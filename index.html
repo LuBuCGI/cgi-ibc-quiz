@@ -3,112 +3,1022 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CGI Quiz Challenge</title>
+  <title>CGI Quiz</title>
   <style>
-    :root{--bg:#f5f6fa;--panel:#fff;--panel-soft:#fbfbfd;--line:#e8e8ee;--text:#111318;--muted:#5f6472;--red:#e71c3c;--purple:#6f2dbd;--blue:#1f5fd1;--green:#2faf49;--shadow:0 10px 28px rgba(16, 24, 40, 0.08);--radius:24px;--sidebar:330px;--step-gap:16px;}
-    *{box-sizing:border-box} html,body{height:100%} body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;}
-    .app{min-height:100%;padding:20px;} .frame{width:min(1600px,100%);margin:0 auto;display:grid;grid-template-columns:var(--sidebar) 1fr;gap:18px;align-items:stretch;}
-    .topbar{grid-column:1/-1;display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding:0 4px 2px;} .brand{display:flex;flex-direction:column;gap:6px;} .eyebrow{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--muted);font-weight:700;} h1{margin:0;font-size:clamp(28px,3.4vw,52px);line-height:1.02;letter-spacing:-.04em;} .pill{border:1px solid var(--line);background:#fff;border-radius:999px;padding:11px 14px;font-size:14px;color:#333847;box-shadow:var(--shadow);white-space:nowrap;}
-    .sidebar,.main{background:var(--panel);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow);overflow:hidden;}
-    .sidebar{display:grid;grid-template-rows:auto auto 1fr auto;min-height:calc(100vh - 40px);} .logo-strip{padding:20px 20px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;}
-    .cgi-wordmark{display:flex;align-items:baseline;gap:12px;font-weight:900;} .cgi-wordmark .cgi{font-size:30px;color:var(--red);letter-spacing:-.04em;} .cgi-wordmark .bar{width:1px;align-self:stretch;background:linear-gradient(to bottom, transparent, #d8dbe4, transparent);} .cgi-wordmark .anniv{display:flex;gap:10px;align-items:baseline;} .cgi-wordmark .anniv .num{font-size:42px;line-height:1;color:var(--purple);letter-spacing:-.05em;} .cgi-wordmark .anniv .copy{font-size:14px;line-height:1.05;color:var(--purple);text-transform:uppercase;letter-spacing:.03em;font-weight:800;}
-    .sidebar-inner{padding:18px 18px 14px;display:grid;gap:14px;} .sidebar h2{margin:0;color:var(--red);font-size:clamp(20px,2vw,30px);line-height:1.05;letter-spacing:-.03em;} .sidebar p{margin:0;color:#303746;line-height:1.45;font-size:15px;} .topic-list{display:grid;gap:12px;margin-top:2px;}
-    .topic-btn{appearance:none;border:1px solid var(--line);background:var(--panel-soft);border-radius:18px;padding:16px 16px;cursor:pointer;display:flex;align-items:center;gap:14px;text-align:left;transition:transform .15s ease,border-color .15s ease,background .15s ease,box-shadow .15s ease;min-height:76px;} .topic-btn:hover{transform:translateY(-1px);background:#fff;box-shadow:0 8px 20px rgba(16,24,40,.04)} .topic-btn.active{border-color: color-mix(in srgb, var(--topic-color) 72%, white);background: color-mix(in srgb, var(--topic-color) 10%, white);box-shadow:0 10px 26px color-mix(in srgb, var(--topic-color) 13%, transparent);}
-    .topic-icon{width:28px;height:28px;flex:0 0 28px;color:var(--topic-color);display:grid;place-items:center;} .topic-icon svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;} .topic-copy{flex:1;min-width:0;} .topic-copy strong{display:block;font-size:16px;line-height:1.2;font-weight:800;color:#1d2430;} .topic-arrow{color:#1f2430;opacity:.55;font-size:24px;line-height:1;}
-    .hero-panel{margin-top:auto;border-top:1px solid var(--line);padding:16px 0 0;} .ibc-block{position:relative;min-height:200px;border-radius:0 0 28px 28px;overflow:hidden;background:linear-gradient(180deg,#ffffff 0%, #fff7fa 36%, #f2e5ff 100%);display:flex;align-items:flex-end;} .ibc-block::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg, rgba(255,255,255,.2), rgba(255,255,255,0)),linear-gradient(135deg, rgba(231,28,60,.97), rgba(231,28,60,.9) 46%, rgba(111,45,189,.96) 100%);clip-path:polygon(0 65%, 5% 60%, 8% 51%, 12% 56%, 14% 41%, 16% 49%, 19% 34%, 22% 45%, 25% 28%, 27% 35%, 30% 17%, 32% 25%, 35% 15%, 37% 20%, 40% 10%, 42% 18%, 45% 15%, 47% 23%, 50% 10%, 53% 25%, 55% 20%, 58% 34%, 61% 18%, 64% 28%, 67% 14%, 70% 33%, 73% 20%, 76% 41%, 79% 32%, 82% 55%, 85% 50%, 88% 64%, 100% 66%, 100% 100%, 0 100%);opacity:.98;}
-    .ibc-content{position:relative;z-index:1;padding:18px;color:#fff;display:flex;align-items:end;gap:14px;width:100%;} .ibc-badge{width:62px;height:62px;border-radius:12px;background:#000;display:grid;place-items:center;flex:0 0 62px;overflow:hidden;box-shadow:0 10px 20px rgba(0,0,0,.22);} .ibc-badge img{width:86%;height:86%;object-fit:contain;display:block} .ibc-text{display:grid;gap:2px;} .ibc-text .title{font-size:18px;font-weight:900;letter-spacing:-.02em;} .ibc-text .small{font-size:13px;font-weight:700;line-height:1.25;opacity:.96;}
-    .footer-icons{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:12px 18px 16px;border-top:1px solid var(--line);background:#fff;} .footer-item{display:flex;gap:12px;align-items:flex-start;color:#1f2430;min-width:0;} .footer-item .ico{width:34px;height:34px;color:var(--red);flex:0 0 34px;margin-top:2px;} .footer-item .ico svg{width:100%;height:100%;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;} .footer-item strong{display:block;font-size:14px;margin-bottom:2px;} .footer-item span{display:block;color:#5f6472;font-size:12px;line-height:1.35;}
-    .main{padding:20px;min-height:calc(100vh - 40px);display:grid;grid-template-rows:auto auto 1fr;gap:16px;background:#fff;} .main-top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;} .progress-shell{display:flex;gap:12px;align-items:center;min-width:min(860px,100%);flex:1;} .progress-label{color:var(--red);font-weight:800;font-size:14px;white-space:nowrap;} .progress{height:10px;border-radius:999px;background:#e7e8ee;overflow:hidden;flex:1;} .progress>span{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--red),#f0667d);border-radius:inherit;transition:width .25s ease;} .main-card{border:1px solid var(--line);border-radius:24px;background:#fff;box-shadow:var(--shadow);padding:26px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr);gap:22px;min-height:0;}
-    .question-area{display:grid;align-content:start;gap:16px;} .question-title{margin:0;font-size:clamp(22px,2.2vw,38px);line-height:1.12;letter-spacing:-.03em;font-weight:900;color:#171b23;} .helper{font-size:14px;color:var(--muted);line-height:1.45;}
-    .answers{display:grid;gap:10px;} .answer-btn{appearance:none;border:1px solid #d9dbe3;background:#fff;border-radius:14px;padding:14px 14px;min-height:60px;font-size:16px;color:#202533;text-align:left;cursor:pointer;transition:background .14s ease,border-color .14s ease,transform .14s ease,box-shadow .14s ease;display:flex;align-items:center;gap:12px;} .answer-btn:hover{transform:translateY(-1px);background:#fcfcfd;box-shadow:0 8px 16px rgba(16,24,40,.04);} .answer-btn .radio{width:20px;height:20px;border-radius:999px;border:2px solid #b8bcc7;flex:0 0 20px;position:relative;transition:border-color .15s ease,background .15s ease;} .answer-btn.selected{border-color:#35a63d;background:#f1fbf2;} .answer-btn.selected .radio{border-color:#35a63d;background:radial-gradient(circle, #35a63d 0 40%, transparent 42%);} .answer-btn.correct{border-color:rgba(47,175,73,.55);background:rgba(47,175,73,.08);} .answer-btn.wrong{border-color:rgba(231,28,60,.5);background:rgba(231,28,60,.08);}
-    .feedback{min-height:74px;border:1px solid #d9dbe3;border-radius:16px;background:#fafbfc;padding:14px 15px;color:#2b3140;line-height:1.45;} .feedback.good{border-color:rgba(47,175,73,.28);background:rgba(47,175,73,.07);} .feedback.bad{border-color:rgba(231,28,60,.28);background:rgba(231,28,60,.07);} .feedback strong{display:block;margin-bottom:4px} .actions{display:flex;justify-content:center;gap:12px;margin-top:8px;} .primary{appearance:none;border:none;background:linear-gradient(135deg,var(--red),#f21e43);color:#fff;padding:14px 26px;border-radius:14px;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 12px 24px rgba(231,28,60,.18);transition:transform .15s ease,opacity .15s ease;min-width:180px;} .primary:hover{transform:translateY(-1px)} .primary:disabled{opacity:.45;cursor:not-allowed;transform:none}
-    .logo-area{display:grid;gap:14px;align-content:start;} .logo-title{font-size:14px;text-transform:uppercase;letter-spacing:.18em;color:#666b78;font-weight:800;} .logo-stack{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--step-gap);align-items:start;} .logo-step{border:1px solid #edf0f4;border-radius:18px;background:linear-gradient(180deg,#fff,#fbfbfd);padding:18px 12px 12px;text-align:center;box-shadow:0 10px 20px rgba(16,24,40,.03);min-height:320px;display:grid;grid-template-rows:1fr auto auto;gap:10px;transition:opacity .2s ease,transform .2s ease,border-color .2s ease,box-shadow .2s ease;} .logo-step.revealed{border-color:rgba(231,28,60,.16);box-shadow:0 12px 28px rgba(231,28,60,.08);} .logo-step.upcoming{opacity:.45;filter:grayscale(1);} .logo-frame{position:relative;border-radius:14px;display:grid;place-items:center;overflow:hidden;background:transparent;} .logo-frame img{width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 12px 20px rgba(0,0,0,.02));transition:transform .2s ease,opacity .2s ease,filter .2s ease;transform:scale(1);} .logo-step.upcoming img{opacity:.45;filter:grayscale(1) opacity(.45);transform:scale(.98);} .logo-step.revealed img{opacity:1;filter:none;} .step-badge{width:30px;height:30px;border-radius:999px;margin:0 auto;display:grid;place-items:center;font-weight:900;font-size:14px;color:#fff;background:#b8bcc7;transition:background .2s ease;} .logo-step.revealed .step-badge{background:var(--red);} .step-label{font-size:14px;color:#444a59;}
-    .form-card{border:1px solid var(--line);border-radius:18px;background:#fbfbfd;padding:16px;display:grid;gap:12px;} .form-title{font-size:18px;font-weight:900;margin:0;} .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;} .input{width:100%;border:1px solid #d9dbe3;border-radius:12px;padding:12px 12px;font-size:15px;background:#fff;color:#111318;outline:none;} .input:focus{border-color:rgba(231,28,60,.5);box-shadow:0 0 0 4px rgba(231,28,60,.08);} .checkbox{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:#444a59;line-height:1.35;} .celebrate{border:1px solid rgba(47,175,73,.22);background:linear-gradient(180deg, rgba(47,175,73,.06), rgba(47,175,73,.02));padding:18px;border-radius:18px;}
-    .hidden{display:none !important;}
-    @media (max-width: 1200px){.frame{grid-template-columns:1fr}.sidebar,.main{min-height:auto}.main-card{grid-template-columns:1fr}.logo-stack{grid-template-columns:repeat(3,minmax(0,1fr))}}
-    @media (max-width: 760px){.app{padding:10px}.topbar{gap:10px}.progress-shell{min-width:0;width:100%}.main{padding:14px}.main-card{padding:16px}.sidebar-inner{padding:14px}.logo-strip{padding:16px 14px 10px}.form-grid{grid-template-columns:1fr}.footer-icons{grid-template-columns:1fr}.logo-stack{grid-template-columns:1fr;gap:12px}.logo-step{min-height:220px}}
+    :root{
+      --bg:#f4f5f7;
+      --panel:#ffffff;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --border:#e5e7eb;
+      --red:#e11d48;
+      --red-2:#f43f5e;
+      --green:#16a34a;
+      --blue:#2563eb;
+      --shadow: 0 18px 40px rgba(17,24,39,.08);
+      --shadow-soft: 0 6px 22px rgba(17,24,39,.06);
+      --radius: 22px;
+      --radius-sm: 16px;
+      --sidebar: 320px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(225,29,72,.08), transparent 35%),
+        linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    button, input {
+      font: inherit;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--sidebar) 1fr;
+      gap: 20px;
+      padding: 18px;
+    }
+
+    .sidebar,
+    .main {
+      border-radius: 28px;
+    }
+
+    .sidebar {
+      background: rgba(255,255,255,.9);
+      border: 1px solid rgba(229,231,235,.9);
+      box-shadow: var(--shadow-soft);
+      padding: 18px 18px 16px;
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100vh - 36px);
+      overflow: hidden;
+    }
+
+    .logo-top {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 68px;
+      margin-bottom: 14px;
+    }
+
+    .logo-top img {
+      display: block;
+      width: 248px;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .sidebar h2 {
+      margin: 18px 0 8px;
+      color: var(--red);
+      font-size: 1.7rem;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+
+    .sidebar p {
+      margin: 0;
+      color: #374151;
+      font-size: 1.05rem;
+      line-height: 1.45;
+      max-width: 16ch;
+    }
+
+    .topic-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 26px;
+    }
+
+    .topic-btn {
+      width: 100%;
+      text-align: left;
+      border: 1.5px solid var(--border);
+      background: #fff;
+      border-radius: 18px;
+      padding: 18px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+      box-shadow: 0 1px 0 rgba(17,24,39,.02);
+    }
+
+    .topic-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(17,24,39,.06); }
+    .topic-btn.active {
+      border-color: var(--red);
+      background: linear-gradient(180deg, rgba(225,29,72,.04), rgba(225,29,72,.02));
+      box-shadow: 0 10px 24px rgba(225,29,72,.08);
+    }
+
+    .topic-icon {
+      width: 28px; height: 28px; flex: 0 0 28px;
+      display: grid; place-items: center;
+      color: var(--icon, var(--red));
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    .topic-text {
+      flex: 1;
+      font-size: 1.05rem;
+      line-height: 1.25;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .topic-arrow {
+      color: #111827;
+      font-size: 1.45rem;
+      opacity: .7;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 20px;
+    }
+
+    .city-card {
+      border-radius: 18px;
+      padding: 14px;
+      min-height: 164px;
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(135deg, rgba(225,29,72,.95), rgba(236,72,153,.84) 40%, rgba(124,58,237,.9) 100%);
+      color: #fff;
+      box-shadow: 0 12px 28px rgba(225,29,72,.20);
+    }
+
+    .city-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to top, rgba(255,255,255,.0), rgba(255,255,255,.12) 70%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='180' viewBox='0 0 800 180'%3E%3Cpath d='M0 130h18v-20h18v-12h14v-30h16v24h12v-32h12v-20h18v46h10v-14h13v-24h14v12h12v34h11v-50h15v62h12v-32h14v24h12v-30h16v20h13v-18h14v14h15v-40h14v56h14v-22h12v-20h15v48h12v-16h14v-26h16v70h14v-40h11v-18h14v28h13v-8h11v16h14v-56h16v34h12v-22h16v18h10v-14h16v34h14v-50h12v14h14v30h16v-20h14v-18h13v56h14v-24h16v10h12v24h14v-40h14v-10h16v24h12v28H0z' fill='white' fill-opacity='.9'/%3E%3C/svg%3E") center bottom / cover no-repeat;
+      opacity: .65;
+      mix-blend-mode: screen;
+    }
+
+    .city-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: end;
+      gap: 12px;
+      height: 100%;
+    }
+
+    .ibc-mark {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      background: rgba(0,0,0,.85);
+      display: grid;
+      place-items: center;
+      flex: 0 0 52px;
+      font-weight: 800;
+      font-style: italic;
+      font-size: 2rem;
+      line-height: 1;
+      transform: skewX(-8deg);
+    }
+
+    .city-text {
+      font-size: .95rem;
+      line-height: 1.15;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .city-text small {
+      display: block;
+      font-weight: 600;
+      opacity: .9;
+      margin-top: 2px;
+    }
+
+    .main {
+      background: rgba(255,255,255,.9);
+      border: 1px solid rgba(229,231,235,.9);
+      box-shadow: var(--shadow-soft);
+      padding: 20px;
+      min-height: calc(100vh - 36px);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .topline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 2px 6px 0;
+    }
+
+    .progress-label {
+      color: var(--red);
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .progress-count {
+      color: #111827;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 7px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+
+    .progress-bar > div {
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #ef4444, var(--red));
+      transition: width .28s ease;
+    }
+
+    .content-card {
+      flex: 1;
+      background: rgba(255,255,255,.96);
+      border-radius: 24px;
+      border: 1px solid rgba(229,231,235,.9);
+      box-shadow: 0 14px 28px rgba(17,24,39,.04);
+      padding: 26px 26px 22px;
+      display: grid;
+      grid-template-columns: 1.25fr .95fr;
+      gap: 22px;
+      align-items: start;
+      min-height: 0;
+    }
+
+    .left-col {
+      min-width: 0;
+    }
+
+    .question-title {
+      margin: 6px 0 18px;
+      font-size: 1.45rem;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .question-subtitle {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: .98rem;
+      line-height: 1.4;
+    }
+
+    .answers {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .answer {
+      width: 100%;
+      border-radius: 16px;
+      border: 1.5px solid #d7dbe1;
+      background: #fff;
+      min-height: 60px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-align: left;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+      box-shadow: 0 1px 0 rgba(17,24,39,.02);
+    }
+
+    .answer:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(17,24,39,.04);
+    }
+
+    .answer .radio {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 2px solid #aeb4bf;
+      position: relative;
+      flex: 0 0 18px;
+    }
+
+    .answer.selected {
+      border-color: #a7b3c8;
+      background: linear-gradient(180deg, rgba(37,99,235,.06), rgba(37,99,235,.03));
+    }
+
+    .answer.selected .radio::after {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      background: var(--blue);
+    }
+
+    .answer.correct {
+      border-color: rgba(22,163,74,.45);
+      background: linear-gradient(180deg, rgba(22,163,74,.12), rgba(22,163,74,.05));
+    }
+
+    .answer.incorrect {
+      border-color: rgba(225,29,72,.5);
+      background: linear-gradient(180deg, rgba(225,29,72,.10), rgba(225,29,72,.04));
+    }
+
+    .answer span.text {
+      font-size: 1.02rem;
+      line-height: 1.3;
+      color: #111827;
+      font-weight: 500;
+    }
+
+    .hint {
+      margin-top: 16px;
+      border-radius: 16px;
+      border: 1px solid #dbe0e7;
+      background: #fff;
+      padding: 14px 16px;
+      color: #374151;
+      font-size: .98rem;
+      line-height: 1.45;
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hint .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--blue);
+      flex: 0 0 10px;
+    }
+
+    .controls {
+      margin-top: 18px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .primary, .secondary {
+      appearance: none;
+      border: 0;
+      border-radius: 14px;
+      min-width: 200px;
+      padding: 14px 22px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1.02rem;
+      transition: transform .15s ease, filter .15s ease, opacity .15s ease;
+    }
+
+    .primary:hover, .secondary:hover { transform: translateY(-1px); }
+    .primary {
+      color: #fff;
+      background: linear-gradient(90deg, #ef4444, #e11d48);
+      box-shadow: 0 14px 28px rgba(225,29,72,.18);
+    }
+
+    .secondary {
+      color: #111827;
+      background: #fff;
+      border: 1px solid #d7dbe1;
+    }
+
+    .topic-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      padding: 10px 14px;
+      color: #111827;
+      font-weight: 600;
+      margin-bottom: 8px;
+      box-shadow: 0 4px 12px rgba(17,24,39,.03);
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      min-height: 360px;
+      padding: 20px 0 10px;
+    }
+
+    .logo-stage {
+      width: 100%;
+      max-width: 760px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 24px;
+      align-items: end;
+    }
+
+    .logo-stage .slot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 380px;
+    }
+
+    .logo-stage img {
+      display: block;
+      height: 280px;
+      width: auto;
+      max-width: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 14px 26px rgba(225,29,72,.18));
+      transition: opacity .4s ease, transform .4s ease, filter .4s ease;
+      opacity: .08;
+      transform: translateY(12px) scale(.96);
+      background: transparent;
+    }
+
+    .logo-stage img.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .logo-stage img.final {
+      filter: drop-shadow(0 16px 28px rgba(225,29,72,.28));
+    }
+
+    .logo-stage .c { width: 100%; max-width: 245px; }
+    .logo-stage .g { width: 100%; max-width: 245px; }
+    .logo-stage .i { width: 100%; max-width: 245px; }
+
+    .complete-box {
+      margin-top: 8px;
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(22,163,74,.10), rgba(22,163,74,.05));
+      border: 1px solid rgba(22,163,74,.22);
+      padding: 18px 18px 16px;
+    }
+
+    .complete-box h3 {
+      margin: 0 0 6px;
+      color: #166534;
+      font-size: 1.3rem;
+      line-height: 1.15;
+    }
+
+    .complete-box p {
+      margin: 0;
+      color: #374151;
+      line-height: 1.45;
+      max-width: 54ch;
+    }
+
+    .form-grid {
+      margin-top: 16px;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .form-grid input {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid #d7dbe1;
+      padding: 13px 14px;
+      background: #fff;
+      color: #111827;
+    }
+
+    .form-grid .wide {
+      grid-column: 1 / -1;
+    }
+
+    .checkbox {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: .95rem;
+      color: #374151;
+      line-height: 1.4;
+      padding: 4px 2px;
+    }
+
+    .checkbox input {
+      margin-top: 3px;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--red);
+    }
+
+    .hide { display: none !important; }
+
+    .footer-note {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      color: var(--muted);
+      font-size: .9rem;
+      padding: 0 6px 2px;
+    }
+
+    .footer-note strong { color: #111827; }
+
+    @media (max-width: 1180px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { min-height: auto; }
+      .main { min-height: auto; }
+      .content-card { grid-template-columns: 1fr; }
+      .logo-area { min-height: 300px; }
+      .logo-stage .slot { min-height: 300px; }
+    }
+
+    @media (max-width: 720px) {
+      .app { padding: 12px; gap: 12px; }
+      .sidebar, .main { border-radius: 22px; }
+      .sidebar { padding: 14px; }
+      .main { padding: 14px; }
+      .topline { flex-direction: column; align-items: flex-start; }
+      .form-grid { grid-template-columns: 1fr; }
+      .logo-top img {
+      display: block;
+      width: 248px;
+      max-width: 100%;
+      height: auto;
+    }
+      .logo-stage { gap: 10px; }
+      .logo-stage .slot { min-height: 220px; }
+      .logo-stage img { height: 190px; }
+      .question-title { font-size: 1.2rem; }
+      .primary, .secondary { width: 100%; min-width: 0; }
+    }
   </style>
 </head>
 <body>
   <div class="app">
-    <div class="frame">
-      <aside class="sidebar">
-        <div class="logo-strip">
-          <div class="cgi-wordmark" aria-label="CGI 50 Jahre">
-            <div class="cgi">CGI</div><div class="bar"></div>
-            <div class="anniv"><div class="num">50</div><div class="copy">Years<br/>of insights<br/>in action</div></div>
-          </div>
-        </div>
-        <div class="sidebar-inner">
-          <div class="section"><h2>Wähle dein Thema</h2><p>Diese Auswahl zählt nicht zur Bewertung. Beantworte anschließend 3 Fragen zu deinem gewählten Thema.</p></div>
-          <div class="topic-list" id="topicList"></div>
-        </div>
-        <div class="hero-panel">
-          <div class="ibc-block" aria-hidden="true">
-            <div class="ibc-content">
-              <div class="ibc-badge"><img src="ibc-logo.png" alt="" onerror="this.style.display='none'"></div>
-              <div class="ibc-text"><div class="title">IBC2025</div><div class="small">12–15 September 2025<br>RAI Amsterdam</div></div>
+    <aside class="sidebar">
+      <div class="logo-top">
+        <img src="Bild1.png" alt="CGI 50 Jahre" />
+      </div>
+
+      <h2>Wähle dein Thema</h2>
+      <p>Diese Auswahl zählt nicht zur Bewertung. Beantworte anschließend 3 Fragen zu deinem gewählten Thema.</p>
+
+      <div class="topic-list" id="topicList"></div>
+
+      <div class="sidebar-footer">
+        <div class="city-card" aria-hidden="true">
+          <div class="city-inner">
+            <div class="ibc-mark">ibc</div>
+            <div class="city-text">
+              IBC 2025
+              <small>12–15 September 2025<br />RAI Amsterdam</small>
             </div>
           </div>
         </div>
-        <div class="footer-icons">
-          <div class="footer-item"><div class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18"></path><path d="M12 3c3.5 3.5 3.5 14.5 0 18"></path><path d="M12 3c-3.5 3.5-3.5 14.5 0 18"></path></svg></div><div><strong>Insights you can act on</strong><span>Real outcomes. Measurable impact.</span></div></div>
-          <div class="footer-item"><div class="ico"><svg viewBox="0 0 24 24"><path d="M4 20v-2c0-2.2 1.8-4 4-4h4c2.2 0 4 1.8 4 4v2"></path><circle cx="9" cy="8" r="3"></circle><path d="M16 7c1.7.3 3 1.8 3 3.6"></path></svg></div><div><strong>Built for media</strong><span>Deep industry expertise. Proven solutions.</span></div></div>
-          <div class="footer-item"><div class="ico"><svg viewBox="0 0 24 24"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.1 6.4 20.2l1.1-6.2L3 9.6l6.2-.9L12 3z"></path></svg></div><div><strong>Together, as partners</strong><span>Connected thinking. Stronger together.</span></div></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div>
+        <div class="topline">
+          <div>
+            <div class="progress-label" id="progressLabel">Frage 1 von 3</div>
+            <div class="progress-bar" aria-hidden="true"><div id="progressBar"></div></div>
+          </div>
+          <div class="progress-count" id="progressCount">0 / 3 richtig</div>
         </div>
-      </aside>
-      <main class="main">
-        <div class="topbar"><div class="brand"><div class="eyebrow">Messe-Quiz</div><h1>CGI Logo-Aufbau Spiel</h1></div><div class="pill" id="topicPill">Themenwahl offen</div></div>
-        <div class="main-top"><div class="progress-shell"><div class="progress-label" id="questionLabel">Wähle zuerst ein Thema</div><div class="progress"><span id="progressBar"></span></div><div class="pill" id="scorePill">0 / 3 richtig</div></div></div>
-        <section class="main-card">
-          <div class="question-area">
-            <h2 class="question-title" id="questionTitle">Bitte wähle links eines der vier Themen aus.</h2>
-            <div class="helper" id="questionHelper">Die Themenwahl ist nur eine Interessenabfrage und geht nicht in die Bewertung ein.</div>
-            <div class="answers" id="answers"></div>
-            <div class="feedback" id="feedbackBox"><strong>Hinweis</strong><span>Nach der Themenwahl erscheinen hier die drei Fragen des gewählten Themas.</span></div>
-            <div class="actions"><button class="primary hidden" id="continueBtn">Weiter</button></div>
-            <div class="form-card hidden" id="successPanel">
-              <h3 class="form-title">Gewinnspiel freigeschaltet</h3>
-              <p>Du hast 3 richtige Antworten im gewählten Themenbereich erreicht. Jetzt können die Kontaktdaten erfasst werden.</p>
-              <div class="form-grid"><input class="input" placeholder="Vorname" /><input class="input" placeholder="Nachname" /><input class="input" placeholder="Firma" /><input class="input" placeholder="E-Mail" type="email" /></div>
-              <label class="checkbox"><input type="checkbox" /><span>Ich akzeptiere die Teilnahmebedingungen und die Verarbeitung meiner Daten für die Gewinnspielteilnahme.</span></label>
-              <button class="primary">Jetzt teilnehmen</button>
+      </div>
+
+      <section class="content-card" id="contentCard">
+        <div class="left-col">
+          <div id="topicBanner" class="topic-banner">Bitte wähle zuerst ein Thema.</div>
+          <h3 class="question-title" id="questionTitle">Wähle ein Thema links, um zu starten.</h3>
+          <p class="question-subtitle" id="questionSubtitle">Die drei Fragen passen sich dem gewählten Themenfeld an.</p>
+          <div class="answers" id="answers"></div>
+          <div class="hint" id="hint"><span class="dot"></span><span>Das Gewinnspiel wird erst nach 3 korrekten Antworten freigeschaltet.</span></div>
+          <div class="controls">
+            <button class="secondary hide" id="nextButton" type="button">Weiter</button>
+          </div>
+        </div>
+
+        <div class="logo-area">
+          <div class="logo-stage" aria-label="CGI Logo Aufbau">
+            <div class="slot"><img id="logoC" class="c" src="CGI_C.png" alt="CGI C" /></div>
+            <div class="slot"><img id="logoG" class="g" src="CGI_G.png" alt="CGI G" /></div>
+            <div class="slot"><img id="logoI" class="i" src="CGI_I.png" alt="CGI I" /></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="content-card hide" id="winCard">
+        <div class="left-col">
+          <div class="topic-banner">Gewinnspiel freigeschaltet</div>
+          <h3 class="question-title" style="margin-bottom:10px;">Glückwunsch! Das Logo ist vollständig aufgebaut.</h3>
+          <p class="question-subtitle">Trage jetzt deine Kontaktdaten ein, um am Gewinnspiel teilzunehmen.</p>
+
+          <div class="complete-box">
+            <h3>Teilnahmeformular</h3>
+            <p>Bitte die Angaben ergänzen. Du kannst das Formular später mit deinem CRM oder einer E-Mail-Lösung verbinden.</p>
+
+            <div class="form-grid">
+              <input type="text" placeholder="Vorname" />
+              <input type="text" placeholder="Nachname" />
+              <input class="wide" type="text" placeholder="Firma" />
+              <input class="wide" type="email" placeholder="E-Mail" />
+              <label class="checkbox">
+                <input type="checkbox" />
+                <span>Ich akzeptiere die Teilnahmebedingungen und die Verarbeitung meiner Daten für die Gewinnspielteilnahme.</span>
+              </label>
+              <button class="primary wide" type="button">Jetzt teilnehmen</button>
             </div>
           </div>
-          <div class="logo-area">
-            <div class="logo-title">CGI Logo-Aufbau</div>
-            <div class="logo-stack">
-              <div class="logo-step upcoming" id="step1"><div class="logo-frame"><img src="CGI_C.png" alt="CGI C"></div><div class="step-badge">1</div><div class="step-label">Schritt 1</div></div>
-              <div class="logo-step upcoming" id="step2"><div class="logo-frame"><img src="CGI_G.png" alt="CGI G"></div><div class="step-badge">2</div><div class="step-label">Schritt 2</div></div>
-              <div class="logo-step upcoming" id="step3"><div class="logo-frame"><img src="CGI_I.png" alt="CGI I"></div><div class="step-badge">3</div><div class="step-label">Schritt 3</div></div>
-            </div>
-            <div class="celebrate" id="celebrateBox" style="display:none"><strong>Perfekt!</strong><div style="margin-top:6px;color:#4e5565;line-height:1.45">Das CGI Logo ist vollständig aufgebaut. Das Gewinnspiel ist jetzt geöffnet.</div></div>
+        </div>
+
+        <div class="logo-area">
+          <div class="logo-stage" aria-label="CGI Logo vollständig">
+            <div class="slot"><img class="c visible final" src="CGI_C.png" alt="CGI C" /></div>
+            <div class="slot"><img class="g visible final" src="CGI_G.png" alt="CGI G" /></div>
+            <div class="slot"><img class="i visible final" src="CGI_I.png" alt="CGI I" /></div>
           </div>
-        </section>
-      </main>
-    </div>
+        </div>
+      </section>
+
+      <div class="footer-note">
+        <span><strong>Hinweis:</strong> Das CGI-Logo baut sich nacheinander aus den drei gelieferten Bilddateien auf.</span>
+        <span>Standalone HTML für GitHub Pages</span>
+      </div>
+    </main>
   </div>
+
   <script>
     const TOPICS = {
-      ai: {title:'AI strategy and implementation', color:'#e71c3c', icon:'brain', questions:[{mode:'single', question:'Welche der folgenden Antworten ist kein AI Chatbot?', options:['ChatGPT','Claude','Gemini','Google Search'], answer:'Google Search', explanation:'Google Search ist eine Suchmaschine und kein AI Chatbot.'},{mode:'single', question:'Was ist der erste wichtige Schritt zur Einführung einer AI-Lösung im Unternehmen?', options:['Kosten-Nutzen-Abschätzung','Wahl der richtigen Technologie','Bedarfsermittlung','Testing verschiedener Optionen'], answer:'Bedarfsermittlung', explanation:'Am Anfang steht die Analyse des tatsächlichen Bedarfs.'},{mode:'single', question:'Was ist bei den meisten Unternehmen die größte Herausforderung für die erfolgreiche Einführung von KI?', options:['Akzeptanz der Mitarbeitenden','Strategische Einbindung der Tools','Finden eines geeigneten Use Cases','Auswahl der besten Technologie'], answer:'Strategische Einbindung der Tools', explanation:'Entscheidend ist die passende Verankerung in Prozessen und Organisation.'}]},
-      cyber: {title:'Cybersecurity', color:'#6f2dbd', icon:'shield', questions:[{mode:'single', question:'Geeignete Cybersecurity Strategien …', options:['Eliminieren jedes Risiko von externen Angriffen','Entwickeln sich stetig weiter, um sich den ändernden Bedrohungen anzupassen','Werden einmal aufgesetzt und behalten dann immer ihre Gültigkeit','Sind nicht für jedes Unternehmen notwendig'], answer:'Entwickeln sich stetig weiter, um sich den ändernden Bedrohungen anzupassen', explanation:'Security muss laufend an neue Bedrohungen angepasst werden.'},{mode:'multi', question:'Cybersecurity muss sich aktuellen regulatorischen Vorgaben anpassen. Welche drei wichtigen Vorgaben sind das u.a.? Bitte wählen Sie drei Antworten aus.', options:['NIS2','KRITIS','DORA','NEMO'], answers:['NIS2','KRITIS','DORA'], explanation:'Die Frage ist nur korrekt, wenn alle drei richtigen Optionen ausgewählt wurden.'},{mode:'single', question:'TBD: Welche Aussage beschreibt einen modernen Security-Ansatz am besten?', options:['TBD','TBD','TBD','TBD'], answer:'TBD', explanation:'Platzhalterfrage – bitte später mit einem fachlichen Inhalt ersetzen.'}]},
-      cloud: {title:'Cloud and Sovereignty', color:'#1f5fd1', icon:'cloud', questions:[{mode:'single', question:'TBD: Welche Aussage passt am besten zu Cloud Sovereignty?', options:['TBD','TBD','TBD','TBD'], answer:'TBD', explanation:'Platzhalterfrage – bitte später mit einem fachlichen Inhalt ersetzen.'},{mode:'single', question:'TBD: Was ist ein wichtiger Faktor bei der Wahl einer souveränen Cloud-Architektur?', options:['TBD','TBD','TBD','TBD'], answer:'TBD', explanation:'Platzhalterfrage – bitte später mit einem fachlichen Inhalt ersetzen.'},{mode:'single', question:'TBD: Welche Maßnahme unterstützt die Kontrolle über Daten und Plattformen am stärksten?', options:['TBD','TBD','TBD','TBD'], answer:'TBD', explanation:'Platzhalterfrage – bitte später mit einem fachlichen Inhalt ersetzen.'}]},
-      integration: {title:'System Integration', color:'#2faf49', icon:'puzzle', questions:[{mode:'single', question:'TBD: Was ist ein typischer Vorteil einer guten Systemintegration?', options:['TBD','TBD','TBD','TBD'], answer:'TBD', explanation:'Platzhalterfrage – bitte später mit einem fachlichen Inhalt ersetzen.'},{mode:'single', question:'TBD: Welche Aussage beschreibt Integrationsarchitektur am besten?', options:['TBD','TBD','TBD','TBD'], answer:'TBD', explanation:'Platzhalterfrage – bitte später mit einem fachlichen Inhalt ersetzen.'},{mode:'single', question:'TBD: Was reduziert sich durch saubere Schnittstellen häufig am stärksten?', options:['TBD','TBD','TBD','TBD'], answer:'TBD', explanation:'Platzhalterfrage – bitte später mit einem fachlichen Inhalt ersetzen.'}]}
+      ai: {
+        label: "AI strategy and implementation",
+        icon: "🧠",
+        questions: [
+          {
+            mode: "single",
+            question: "Welche der folgenden Antworten ist kein AI Chatbot?",
+            options: ["ChatGPT", "Claude", "Gemini", "Google Search"],
+            answer: "Google Search",
+            explanation: "Google Search ist eine Suchmaschine und kein AI Chatbot."
+          },
+          {
+            mode: "single",
+            question: "Was ist der erste wichtige Schritt zur Einführung einer AI-Lösung im Unternehmen?",
+            options: ["Kosten-Nutzen-Abschätzung", "Wahl der richtigen Technologie", "Bedarfsermittlung", "Testing verschiedener Optionen"],
+            answer: "Bedarfsermittlung",
+            explanation: "Zuerst sollte der konkrete Bedarf verstanden werden."
+          },
+          {
+            mode: "single",
+            question: "Was ist bei den meisten Unternehmen die größte Herausforderung für die erfolgreiche Einführung von KI?",
+            options: ["Akzeptanz der Mitarbeitenden", "Strategische Einbindung der Tools", "Finden eines geeigneten Use Cases", "Auswahl der besten Technologie"],
+            answer: "Strategische Einbindung der Tools",
+            explanation: "Technologie allein reicht nicht — die Einbettung in die Organisation ist entscheidend."
+          }
+        ]
+      },
+      cyber: {
+        label: "Cybersecurity",
+        icon: "🛡️",
+        questions: [
+          {
+            mode: "single",
+            question: "Geeignete Cybersecurity Strategien ...",
+            options: [
+              "Eliminieren jedes Risiko von externen Angriffen",
+              "Entwickeln sich stetig weiter, um sich den ändernden Bedrohungen anzupassen",
+              "Werden einmal aufgesetzt und behalten dann immer ihre Gültigkeit",
+              "Sind nicht für jedes Unternehmen notwendig"
+            ],
+            answer: "Entwickeln sich stetig weiter, um sich den ändernden Bedrohungen anzupassen",
+            explanation: "Bedrohungen verändern sich — Security muss sich laufend anpassen."
+          },
+          {
+            mode: "multi",
+            question: "Cybersecurity muss sich aktuellen regulatorischen Vorgaben anpassen. Welche drei wichtigen Vorgaben sind das unter anderem? Bitte wählen Sie drei Antworten aus.",
+            options: ["NIS2", "KRITIS", "DORA", "NEMO"],
+            answer: ["NIS2", "KRITIS", "DORA"],
+            explanation: "Korrekt sind NIS2, KRITIS und DORA."
+          },
+          {
+            mode: "single",
+            question: "TBD: Welche Aussage beschreibt einen modernen Security-Ansatz am besten?",
+            options: ["TBD", "TBD", "TBD", "TBD"],
+            answer: "TBD",
+            explanation: "Platzhalterfrage für den finalen Inhalt."
+          }
+        ]
+      },
+      cloud: {
+        label: "Cloud and Sovereignty",
+        icon: "☁️",
+        questions: [
+          {
+            mode: "single",
+            question: "TBD: Welche Aussage passt am besten zu Cloud Sovereignty?",
+            options: ["TBD", "TBD", "TBD", "TBD"],
+            answer: "TBD",
+            explanation: "Platzhalterfrage für den finalen Inhalt."
+          },
+          {
+            mode: "single",
+            question: "TBD: Was ist ein wichtiger Faktor bei der Wahl einer souveränen Cloud-Architektur?",
+            options: ["TBD", "TBD", "TBD", "TBD"],
+            answer: "TBD",
+            explanation: "Platzhalterfrage für den finalen Inhalt."
+          },
+          {
+            mode: "single",
+            question: "TBD: Welche Maßnahme unterstützt die Kontrolle über Daten und Plattformen am stärksten?",
+            options: ["TBD", "TBD", "TBD", "TBD"],
+            answer: "TBD",
+            explanation: "Platzhalterfrage für den finalen Inhalt."
+          }
+        ]
+      },
+      integration: {
+        label: "System Integration",
+        icon: "🧩",
+        questions: [
+          {
+            mode: "single",
+            question: "TBD: Was ist ein typischer Vorteil einer guten Systemintegration?",
+            options: ["TBD", "TBD", "TBD", "TBD"],
+            answer: "TBD",
+            explanation: "Platzhalterfrage für den finalen Inhalt."
+          },
+          {
+            mode: "single",
+            question: "TBD: Welche Aussage beschreibt Integrationsarchitektur am besten?",
+            options: ["TBD", "TBD", "TBD", "TBD"],
+            answer: "TBD",
+            explanation: "Platzhalterfrage für den finalen Inhalt."
+          },
+          {
+            mode: "single",
+            question: "TBD: Was reduziert sich durch saubere Schnittstellen häufig am stärksten?",
+            options: ["TBD", "TBD", "TBD", "TBD"],
+            answer: "TBD",
+            explanation: "Platzhalterfrage für den finalen Inhalt."
+          }
+        ]
+      }
     };
-    const topicList = document.getElementById('topicList'); const topicPill = document.getElementById('topicPill'); const questionLabel = document.getElementById('questionLabel'); const scorePill = document.getElementById('scorePill'); const progressBar = document.getElementById('progressBar'); const questionTitle = document.getElementById('questionTitle'); const questionHelper = document.getElementById('questionHelper'); const answersEl = document.getElementById('answers'); const feedbackBox = document.getElementById('feedbackBox'); const continueBtn = document.getElementById('continueBtn'); const successPanel = document.getElementById('successPanel'); const celebrateBox = document.getElementById('celebrateBox'); const stepEls = [document.getElementById('step1'), document.getElementById('step2'), document.getElementById('step3')];
-    const topicIcons = { brain:`<svg viewBox="0 0 24 24"><path d="M9 5.5a3 3 0 0 1 6 0c0 .9-.4 1.7-1 2.2.9.3 1.6 1.1 1.6 2.1 0 .8-.4 1.5-1 1.9.9.4 1.5 1.3 1.5 2.3 0 1.4-1.1 2.6-2.5 2.6H10.5C9.1 16.6 8 15.4 8 14c0-1 .6-1.9 1.5-2.3-.6-.4-1-1.1-1-1.9 0-1 .7-1.8 1.6-2.1-.7-.5-1.1-1.3-1.1-2.2Z"></path><path d="M6.3 10.2c-1.2.4-2.1 1.6-2.1 3 0 1.8 1.4 3.2 3.1 3.3"></path><path d="M17.7 10.2c1.2.4 2.1 1.6 2.1 3 0 1.8-1.4 3.2-3.1 3.3"></path></svg>`, shield:`<svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.1 8.7-7 10-3.9-1.3-7-5-7-10V6l7-3Z"></path><path d="M9 12l2 2 4-4"></path></svg>`, cloud:`<svg viewBox="0 0 24 24"><path d="M7.5 18h10a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.6-1.6A3.8 3.8 0 0 0 7.5 18Z"></path></svg>`, puzzle:`<svg viewBox="0 0 24 24"><path d="M8 3h4v3h2.5a1.5 1.5 0 0 1 1.5 1.5V10h3v4h-3v2.5A1.5 1.5 0 0 1 14.5 18H12v3H8v-3H5.5A1.5 1.5 0 0 1 4 16.5V14H1v-4h3V7.5A1.5 1.5 0 0 1 5.5 6H8V3Z"></path></svg>` };
-    let state={topicKey:null,questionIndex:0,correct:0,selected:null,locked:false,finished:false};
-    function setFeedback(kind,title,text){feedbackBox.className=`feedback ${kind||''}`.trim();feedbackBox.innerHTML=`<strong>${title}</strong><span>${text}</span>`;}
-    function renderTopics(){topicList.innerHTML='';Object.entries(TOPICS).forEach(([key,topic])=>{const btn=document.createElement('button');btn.className='topic-btn';btn.style.setProperty('--topic-color',topic.color);btn.dataset.key=key;btn.innerHTML=`<div class="topic-icon">${topicIcons[topic.icon]||''}</div><div class="topic-copy"><strong>${topic.title}</strong></div><div class="topic-arrow">›</div>`;btn.addEventListener('click',()=>selectTopic(key));topicList.appendChild(btn);});}
-    function updateTopicButtons(){[...topicList.children].forEach(el=>el.classList.toggle('active',el.dataset.key===state.topicKey));}
-    function updateLogo(){stepEls.forEach((el,idx)=>{const revealed=state.correct>idx;el.classList.toggle('revealed',revealed);el.classList.toggle('upcoming',!revealed);});scorePill.textContent=`${state.correct} / 3 richtig`;progressBar.style.width=`${(state.correct/3)*100}%`;}
-    function currentTopic(){return TOPICS[state.topicKey];}
-    function selectTopic(key){state.topicKey=key;state.questionIndex=0;state.correct=0;state.selected=null;state.locked=false;state.finished=false;topicPill.textContent=TOPICS[key].title;questionLabel.textContent='Frage 1 von 3';successPanel.classList.add('hidden');celebrateBox.style.display='none';continueBtn.classList.add('hidden');continueBtn.disabled=true;updateTopicButtons();updateLogo();renderQuestion();}
-    function renderQuestion(){const topic=currentTopic();if(!topic){questionTitle.textContent='Bitte wähle links eines der vier Themen aus.';questionHelper.textContent='Die Themenwahl ist nur eine Interessenabfrage und geht nicht in die Bewertung ein.';answersEl.innerHTML='';continueBtn.classList.add('hidden');setFeedback('', 'Hinweis', 'Nach der Themenwahl erscheinen hier die drei Fragen des gewählten Themas.');return;}const q=topic.questions[state.questionIndex];questionLabel.textContent=`Frage ${state.questionIndex+1} von 3`;questionTitle.textContent=`${state.questionIndex+1}. ${q.question}`;questionHelper.textContent='Wähle eine Antwort und bestätige sie mit "Antwort prüfen".';answersEl.innerHTML='';if(q.mode==='single'){q.options.forEach(opt=>{const btn=document.createElement('button');btn.className='answer-btn';if(state.selected===opt) btn.classList.add('selected');btn.innerHTML=`<span class="radio" aria-hidden="true"></span><span>${opt}</span>`;btn.addEventListener('click',()=>{if(state.locked||state.finished)return;state.selected=opt;renderQuestion();});answersEl.appendChild(btn);});}else{const selected=new Set(state.selected||[]);q.options.forEach(opt=>{const label=document.createElement('button');label.className='answer-btn';if(selected.has(opt)) label.classList.add('selected');label.innerHTML=`<span class="radio" aria-hidden="true"></span><span>${opt}</span>`;label.addEventListener('click',()=>{if(state.locked||state.finished)return;const next=new Set(state.selected||[]);if(next.has(opt)) next.delete(opt); else next.add(opt); state.selected=[...next];renderQuestion();});answersEl.appendChild(label);});}const canContinue=q.mode==='multi' ? Array.isArray(state.selected) && state.selected.length>0 : typeof state.selected==='string' && state.selected.length>0;continueBtn.classList.toggle('hidden', false);continueBtn.disabled=!canContinue || state.locked || state.finished;continueBtn.textContent=state.finished ? 'Fertig' : 'Antwort prüfen';if(!state.locked && !state.finished){setFeedback('', 'Hinweis', q.mode==='multi' ? 'Bei dieser Frage musst du alle richtigen Optionen auswählen.' : 'Wähle genau eine Antwort aus.');}}
-    function evaluateAnswer(){if(!state.topicKey||state.finished||state.locked)return;const q=currentTopic().questions[state.questionIndex];let correct=false;if(q.mode==='multi'){const sel=new Set(state.selected||[]);const ans=new Set(q.answers||[]);correct=sel.size===ans.size && [...sel].every(v=>ans.has(v));}else{correct=state.selected===q.answer;}state.locked=true;if(correct){state.correct+=1;updateLogo();setFeedback('good','Richtig!',q.explanation||'Das war korrekt.');}else{setFeedback('bad','Noch nicht ganz.',q.explanation||'Bitte versuche es noch einmal.');}continueBtn.disabled=true;continueBtn.textContent='Weiter';continueBtn.classList.remove('hidden');window.setTimeout(()=>{state.locked=false;if(correct){state.questionIndex+=1;state.selected=null;if(state.correct>=3){state.finished=true;questionLabel.textContent='Gewinnspiel freigeschaltet';questionTitle.textContent='Glückwunsch – das CGI Logo ist vollständig aufgebaut.';questionHelper.textContent='Jetzt kannst du das Formular für die Gewinnspielteilnahme ausfüllen.';answersEl.innerHTML='';setFeedback('good','Geschafft!','Du hast drei richtige Antworten erreicht.');continueBtn.classList.add('hidden');successPanel.classList.remove('hidden');celebrateBox.style.display='block';return;}renderQuestion();continueBtn.disabled=true;continueBtn.textContent='Antwort prüfen';}else{renderQuestion();}}, correct ? 900 : 1100);}
-    continueBtn.addEventListener('click', evaluateAnswer);
-    function reset(){state={topicKey:null,questionIndex:0,correct:0,selected:null,locked:false,finished:false};topicPill.textContent='Themenwahl offen';questionLabel.textContent='Wähle zuerst ein Thema';scorePill.textContent='0 / 3 richtig';progressBar.style.width='0%';questionTitle.textContent='Bitte wähle links eines der vier Themen aus.';questionHelper.textContent='Die Themenwahl ist nur eine Interessenabfrage und geht nicht in die Bewertung ein.';answersEl.innerHTML='';successPanel.classList.add('hidden');celebrateBox.style.display='none';continueBtn.classList.add('hidden');setFeedback('', 'Hinweis', 'Nach der Themenwahl erscheinen hier die drei Fragen des gewählten Themas.');updateTopicButtons();updateLogo();}
-    renderTopics();updateLogo();reset();
+
+    const topicList = document.getElementById("topicList");
+    const progressLabel = document.getElementById("progressLabel");
+    const progressCount = document.getElementById("progressCount");
+    const progressBar = document.getElementById("progressBar");
+    const questionTitle = document.getElementById("questionTitle");
+    const questionSubtitle = document.getElementById("questionSubtitle");
+    const answers = document.getElementById("answers");
+    const hint = document.getElementById("hint");
+    const topicBanner = document.getElementById("topicBanner");
+    const nextButton = document.getElementById("nextButton");
+    const contentCard = document.getElementById("contentCard");
+    const winCard = document.getElementById("winCard");
+    const logoC = document.getElementById("logoC");
+    const logoG = document.getElementById("logoG");
+    const logoI = document.getElementById("logoI");
+
+    let selectedTopicKey = null;
+    let currentIndex = 0;
+    let correctCount = 0;
+    let selectedSingle = "";
+    let selectedMulti = new Set();
+    let locked = false;
+    let answerState = null; // correct | incorrect | null
+
+    function renderTopicButtons() {
+      topicList.innerHTML = "";
+      Object.entries(TOPICS).forEach(([key, topic]) => {
+        const btn = document.createElement("button");
+        btn.className = "topic-btn" + (key === selectedTopicKey ? " active" : "");
+        btn.type = "button";
+        btn.innerHTML = `
+          <span class="topic-icon" aria-hidden="true">${topic.icon}</span>
+          <span class="topic-text">${topic.label}</span>
+          <span class="topic-arrow" aria-hidden="true">›</span>
+        `;
+        btn.addEventListener("click", () => selectTopic(key));
+        topicList.appendChild(btn);
+      });
+    }
+
+    function setLogoState() {
+      logoC.classList.toggle("visible", correctCount >= 1);
+      logoG.classList.toggle("visible", correctCount >= 2);
+      logoI.classList.toggle("visible", correctCount >= 3);
+    }
+
+    function updateProgress() {
+      progressLabel.textContent = `Frage ${Math.min(currentIndex + 1, 3)} von 3`;
+      progressCount.textContent = `${correctCount} / 3 richtig`;
+      progressBar.style.width = `${(correctCount / 3) * 100}%`;
+      setLogoState();
+    }
+
+    function currentTopic() {
+      return selectedTopicKey ? TOPICS[selectedTopicKey] : null;
+    }
+
+    function currentQuestion() {
+      const topic = currentTopic();
+      return topic ? topic.questions[currentIndex] : null;
+    }
+
+    function renderQuestions() {
+      const topic = currentTopic();
+      if (!topic) {
+        topicBanner.textContent = "Bitte wähle zuerst ein Thema.";
+        questionTitle.textContent = "Wähle ein Thema links, um zu starten.";
+        questionSubtitle.textContent = "Die drei Fragen passen sich dem gewählten Themenfeld an.";
+        answers.innerHTML = "";
+        hint.innerHTML = '<span class="dot"></span><span>Das Gewinnspiel wird erst nach 3 korrekten Antworten freigeschaltet.</span>';
+        nextButton.classList.add("hide");
+        return;
+      }
+
+      if (correctCount >= 3) {
+        contentCard.classList.add("hide");
+        winCard.classList.remove("hide");
+        progressLabel.textContent = "Gewinnspiel freigeschaltet";
+        progressCount.textContent = "3 / 3 richtig";
+        progressBar.style.width = "100%";
+        setLogoState();
+        return;
+      }
+
+      contentCard.classList.remove("hide");
+      winCard.classList.add("hide");
+
+      const q = currentQuestion();
+      topicBanner.textContent = topic.label;
+      questionTitle.textContent = `${currentIndex + 1}. ${q.question}`;
+      questionSubtitle.textContent = topic.questions.length === 3
+        ? "Beantworte die Fragen deines gewählten Themenfelds."
+        : "Wähle eine Antwort oder mehrere Antworten, wenn es eine Mehrfachauswahl ist.";
+
+      renderAnswers();
+      updateHint(q);
+      nextButton.classList.toggle("hide", true);
+      updateProgress();
+    }
+
+    function updateHint(question) {
+      if (answerState === "correct") {
+        hint.innerHTML = `<span class="dot" style="background: var(--green)"></span><span><strong>Richtig!</strong> ${question.explanation}</span>`;
+      } else if (answerState === "incorrect") {
+        hint.innerHTML = `<span class="dot" style="background: var(--red)"></span><span>Noch nicht ganz. Bitte prüfe deine Auswahl.</span>`;
+      } else {
+        hint.innerHTML = `<span class="dot"></span><span>${question.mode === "multi" ? "Bei dieser Frage müssen alle richtigen Optionen gewählt werden." : "Wähle eine Antwort aus und prüfe sie anschließend."}</span>`;
+      }
+    }
+
+    function renderAnswers() {
+      const q = currentQuestion();
+      answers.innerHTML = "";
+
+      if (!q) return;
+
+      if (q.mode === "single") {
+        q.options.forEach((opt) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "answer" + (selectedSingle === opt ? " selected" : "");
+          if (answerState === "correct" && opt === q.answer) btn.classList.add("correct");
+          if (answerState === "incorrect" && selectedSingle === opt && opt !== q.answer) btn.classList.add("incorrect");
+          btn.innerHTML = `<span class="radio" aria-hidden="true"></span><span class="text">${opt}</span>`;
+          btn.addEventListener("click", () => {
+            if (locked) return;
+            selectedSingle = opt;
+            answerState = null;
+            renderQuestions();
+          });
+          answers.appendChild(btn);
+        });
+      } else {
+        q.options.forEach((opt) => {
+          const checked = selectedMulti.has(opt);
+          const label = document.createElement("button");
+          label.type = "button";
+          label.className = "answer" + (checked ? " selected" : "");
+          label.innerHTML = `<span class="radio" aria-hidden="true"></span><span class="text">${opt}</span>`;
+          label.addEventListener("click", () => {
+            if (locked) return;
+            if (selectedMulti.has(opt)) selectedMulti.delete(opt);
+            else selectedMulti.add(opt);
+            answerState = null;
+            renderQuestions();
+          });
+          answers.appendChild(label);
+        });
+      }
+    }
+
+    function checkAnswer() {
+      const q = currentQuestion();
+      if (!q || locked) return;
+
+      let correct = false;
+      if (q.mode === "single") {
+        correct = selectedSingle === q.answer;
+      } else {
+        const arr = Array.from(selectedMulti).sort();
+        const answer = [...q.answer].sort();
+        correct = arr.length === answer.length && arr.every((v, i) => v === answer[i]);
+      }
+
+      if (correct) {
+        locked = true;
+        answerState = "correct";
+        updateHint(q);
+        renderAnswers();
+
+        setTimeout(() => {
+          correctCount += 1;
+          selectedSingle = "";
+          selectedMulti = new Set();
+          locked = false;
+          answerState = null;
+
+          if (correctCount >= 3) {
+            renderQuestions();
+            return;
+          }
+          currentIndex += 1;
+          updateProgress();
+          renderQuestions();
+        }, 900);
+      } else {
+        answerState = "incorrect";
+        updateHint(q);
+        renderAnswers();
+      }
+    }
+
+    function selectTopic(key) {
+      selectedTopicKey = key;
+      currentIndex = 0;
+      correctCount = 0;
+      selectedSingle = "";
+      selectedMulti = new Set();
+      locked = false;
+      answerState = null;
+
+      contentCard.classList.remove("hide");
+      winCard.classList.add("hide");
+      topicBanner.textContent = TOPICS[key].label;
+      nextButton.classList.add("hide");
+      updateProgress();
+      renderTopicButtons();
+      renderQuestions();
+    }
+
+    const checkButton = document.createElement("button");
+    checkButton.className = "primary";
+    checkButton.type = "button";
+    checkButton.textContent = "Antwort prüfen";
+    checkButton.addEventListener("click", checkAnswer);
+    document.querySelector(".controls").prepend(checkButton);
+
+    nextButton.textContent = "Weiter";
+
+    renderTopicButtons();
+    renderQuestions();
+    updateProgress();
+    setLogoState();
   </script>
 </body>
 </html>
