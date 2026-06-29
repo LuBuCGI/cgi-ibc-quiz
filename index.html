@@ -209,8 +209,8 @@
     }
 
     .main {
-      background: rgba(255,255,255,.9);
-      border: 1px solid rgba(229,231,235,.9);
+      background: rgba(255,255,255,.94);
+      border: 1px solid rgba(229,231,235,.92);
       box-shadow: var(--shadow-soft);
       padding: 20px;
       min-height: calc(100vh - 36px);
@@ -259,24 +259,36 @@
 
     .content-card {
       flex: 1;
-      background: rgba(255,255,255,.96);
+      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.94));
       border-radius: 24px;
-      border: 1px solid rgba(229,231,235,.9);
-      box-shadow: 0 14px 28px rgba(17,24,39,.04);
+      border: 1px solid rgba(229,231,235,.88);
+      box-shadow: 0 18px 36px rgba(17,24,39,.04);
       padding: 26px 26px 22px;
       display: grid;
       grid-template-columns: 1.25fr .95fr;
       gap: 22px;
       align-items: start;
       min-height: 0;
+      position: relative;
+      overflow: hidden;
     }
+
+    .content-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(227,25,55,.05), transparent 28%), radial-gradient(circle at top right, rgba(82,54,171,.05), transparent 24%);
+      pointer-events: none;
+    }
+
+    .content-card > * { position: relative; z-index: 1; }
 
     .left-col {
       min-width: 0;
     }
 
     .question-title {
-      margin: 6px 0 18px;
+      margin: 10px 0 18px;
       font-size: 1.45rem;
       line-height: 1.15;
       letter-spacing: -0.03em;
@@ -428,12 +440,13 @@
     }
 
     .slogan {
-      margin: 0 0 8px;
+      margin: 0 0 10px;
       color: var(--red);
-      font-size: .9rem;
+      font-size: clamp(1.18rem, 1.1vw + 1rem, 1.72rem);
+      line-height: 1.05;
       font-weight: 800;
-      letter-spacing: .14em;
-      text-transform: uppercase;
+      letter-spacing: -0.03em;
+      text-transform: none;
     }
 
     .logo-area {
@@ -468,9 +481,10 @@
       max-width: 100%;
       object-fit: contain;
       filter: none;
-      transition: opacity .4s ease, transform .4s ease, filter .4s ease;
+      transition: opacity .58s cubic-bezier(.22,1,.36,1), transform .58s cubic-bezier(.22,1,.36,1), filter .58s ease;
       opacity: 0;
-      transform: translateY(16px) scale(.96);
+      transform: translateY(10px) scale(.985);
+      will-change: opacity, transform;
       background: transparent;
     }
 
@@ -561,6 +575,45 @@
 
     .footer-note strong { color: #111827; }
 
+    .confetti-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 6;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      top: -18px;
+      width: var(--size, 10px);
+      height: calc(var(--size, 10px) * 1.8);
+      border-radius: 999px;
+      background: var(--piece-color, var(--red));
+      left: var(--left, 50%);
+      opacity: 0;
+      transform: translateY(-10px) rotate(0deg);
+      animation: confetti-fall var(--duration, 2200ms) linear infinite;
+      animation-delay: var(--delay, 0ms);
+      box-shadow: 0 2px 6px rgba(0,0,0,.08);
+    }
+
+    .confetti-piece.square {
+      width: var(--size, 10px);
+      height: var(--size, 10px);
+      border-radius: 2px;
+    }
+
+    .confetti-piece.slim {
+      border-radius: 999px;
+    }
+
+    @keyframes confetti-fall {
+      0% { transform: translate3d(0,-18px,0) rotate(0deg); opacity: 0; }
+      8% { opacity: 1; }
+      100% { transform: translate3d(var(--drift, 0px), 120vh, 0) rotate(var(--spin, 360deg)); opacity: 0; }
+    }
+
     @media (max-width: 1180px) {
       .app { grid-template-columns: 1fr; }
       .sidebar { min-height: auto; }
@@ -645,6 +698,7 @@
       </section>
 
       <section class="content-card hide" id="winCard">
+        <div class="confetti-layer hide" id="confettiLayer" aria-hidden="true"></div>
         <div class="left-col">
           <div class="topic-banner">Gewinnspiel freigeschaltet</div>
           <h3 class="question-title" style="margin-bottom:10px;">Glückwunsch! Das Logo ist vollständig aufgebaut.</h3>
@@ -824,6 +878,8 @@
     let selectedMulti = new Set();
     let locked = false;
     let answerState = null; // correct | incorrect | null
+    let shuffledOptions = [];
+    let confettiTimeout = null;
 
     function renderTopicButtons() {
       topicList.innerHTML = "";
@@ -863,6 +919,20 @@
       return topic ? topic.questions[currentIndex] : null;
     }
 
+    function shuffleArray(values) {
+      const arr = [...values];
+      for (let i = arr.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function prepareQuestionOptions() {
+      const q = currentQuestion();
+      shuffledOptions = q ? shuffleArray(q.options) : [];
+    }
+
     function renderQuestions() {
       const topic = currentTopic();
       if (!topic) {
@@ -878,6 +948,8 @@
       if (correctCount >= 3) {
         contentCard.classList.add("hide");
         winCard.classList.remove("hide");
+        const confettiLayer = document.getElementById('confettiLayer');
+        if (confettiLayer) confettiLayer.classList.remove('hide');
         progressLabel.textContent = "Gewinnspiel freigeschaltet";
         progressCount.textContent = "3 / 3 richtig";
         progressBar.style.width = "100%";
@@ -889,6 +961,8 @@
       winCard.classList.add("hide");
 
       const q = currentQuestion();
+      if (!q) return;
+      if (!shuffledOptions.length || shuffledOptions.length !== q.options.length) prepareQuestionOptions();
       topicBanner.textContent = topic.label;
       questionTitle.textContent = `${currentIndex + 1}. ${q.question}`;
       questionSubtitle.textContent = topic.questions.length === 3
@@ -918,7 +992,7 @@
       if (!q) return;
 
       if (q.mode === "single") {
-        q.options.forEach((opt) => {
+        shuffledOptions.forEach((opt) => {
           const btn = document.createElement("button");
           btn.type = "button";
           btn.className = "answer" + (selectedSingle === opt ? " selected" : "");
@@ -934,7 +1008,7 @@
           answers.appendChild(btn);
         });
       } else {
-        q.options.forEach((opt) => {
+        shuffledOptions.forEach((opt) => {
           const checked = selectedMulti.has(opt);
           const label = document.createElement("button");
           label.type = "button";
@@ -979,10 +1053,37 @@
           answerState = null;
 
           if (correctCount >= 3) {
+            if (confettiTimeout) window.clearTimeout(confettiTimeout);
+            const layer = document.getElementById('confettiLayer');
+            if (layer) {
+              const colors = ['#e31937', '#5236ab', '#f5f7ff', '#ff6a00'];
+              const pieces = Array.from({ length: 42 }, (_, idx) => {
+                const piece = document.createElement('span');
+                const size = 8 + Math.floor(Math.random() * 8);
+                const drift = Math.floor(Math.random() * 220) - 110;
+                const spin = (360 + Math.floor(Math.random() * 720)) * (Math.random() > 0.5 ? 1 : -1);
+                piece.className = 'confetti-piece ' + (idx % 3 === 0 ? 'square' : 'slim');
+                piece.style.setProperty('--left', `${Math.random() * 100}%`);
+                piece.style.setProperty('--delay', `${Math.floor(Math.random() * 650)}ms`);
+                piece.style.setProperty('--duration', `${1800 + Math.floor(Math.random() * 900)}ms`);
+                piece.style.setProperty('--size', `${size}px`);
+                piece.style.setProperty('--drift', `${drift}px`);
+                piece.style.setProperty('--spin', `${spin}deg`);
+                piece.style.setProperty('--piece-color', colors[idx % colors.length]);
+                layer.appendChild(piece);
+                return piece;
+              });
+              layer.classList.remove('hide');
+              confettiTimeout = window.setTimeout(() => {
+                pieces.forEach((el) => el.remove());
+                layer.classList.add('hide');
+              }, 2600);
+            }
             renderQuestions();
             return;
           }
           currentIndex += 1;
+          prepareQuestionOptions();
           updateProgress();
           renderQuestions();
         }, 900);
@@ -1006,6 +1107,7 @@
       winCard.classList.add("hide");
       topicBanner.textContent = TOPICS[key].label;
       nextButton.classList.add("hide");
+      prepareQuestionOptions();
       updateProgress();
       renderTopicButtons();
       renderQuestions();
