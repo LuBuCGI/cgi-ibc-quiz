@@ -343,6 +343,20 @@
       position: relative;
     }
 
+    .question-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 6px;
+      flex-wrap: nowrap;
+    }
+
+    .question-meta {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
     .question-title {
       margin: 10px 0 18px;
       font-size: 1.45rem;
@@ -360,10 +374,11 @@
     }
 
     .ai-bubble {
-      position: absolute;
-      top: 6px;
-      right: -24px;
-      width: min(342px, 40vw);
+      position: relative;
+      top: auto;
+      right: auto;
+      width: min(342px, 100%);
+      flex: 0 0 auto;
       background: rgba(255,255,255,.98);
       border: 1.5px solid rgba(227,25,55,.22);
       border-radius: 20px;
@@ -376,6 +391,7 @@
       cursor: pointer;
       transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
       z-index: 4;
+      margin-left: auto;
     }
 
     .ai-bubble:hover {
@@ -832,7 +848,8 @@
       .main { min-height: auto; }
       .content-card { grid-template-columns: 1fr; }
       .left-col { position: static; }
-      .ai-bubble { position: static; width: 100%; margin: 0 0 14px; }
+      .question-row { flex-direction: column; }
+      .ai-bubble { width: 100%; margin: 0; }
       .ai-bubble::after { display: none; }
       .logo-area { min-height: 300px; }
       .logo-stage .slot { min-height: 300px; }
@@ -899,14 +916,18 @@
       <section class="content-card" id="contentCard">
         <div class="left-col">
           <div class="slogan" aria-hidden="true">Building what's next</div>
-          <div id="topicBanner" class="topic-banner">Bitte wähle zuerst ein Thema.</div>
-          <button type="button" class="ai-bubble hide" id="aiBubble" aria-label="Mehr über CGI AI erfahren">
-            <span class="bubble-icon" aria-hidden="true">i</span>
-            <span class="bubble-copy">
-              <strong>AI Offering</strong>
-              Sie wollen mehr über CGI&#39;s Offering im Bereich AI wissen? Hier gibt es einen ersten Einblick: <span class="bubble-link">Link</span>
-            </span>
-          </button>
+          <div class="question-row">
+            <div class="question-meta">
+              <div id="topicBanner" class="topic-banner">Bitte wähle zuerst ein Thema.</div>
+            </div>
+            <button type="button" class="ai-bubble hide" id="aiBubble" aria-label="Mehr über CGI AI erfahren">
+              <span class="bubble-icon" aria-hidden="true">i</span>
+              <span class="bubble-copy">
+                <strong>AI Offering</strong>
+                Sie wollen mehr über CGI&#39;s Offering im Bereich AI wissen? Hier gibt es einen ersten Einblick: <span class="bubble-link">Link</span>
+              </span>
+            </button>
+          </div>
           <h3 class="question-title" id="questionTitle">Wähle ein Thema links, um zu starten.</h3>
           <p class="question-subtitle" id="questionSubtitle">Die drei Fragen passen sich dem gewählten Themenfeld an.</p>
           <div class="answers" id="answers"></div>
