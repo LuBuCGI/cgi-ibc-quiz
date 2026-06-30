@@ -340,6 +340,7 @@
 
     .left-col {
       min-width: 0;
+      position: relative;
     }
 
     .question-title {
@@ -356,6 +357,162 @@
       color: var(--muted);
       font-size: .98rem;
       line-height: 1.4;
+    }
+
+    .ai-bubble {
+      position: absolute;
+      top: 6px;
+      right: -24px;
+      width: min(342px, 40vw);
+      background: rgba(255,255,255,.98);
+      border: 1.5px solid rgba(227,25,55,.22);
+      border-radius: 20px;
+      box-shadow: 0 18px 40px rgba(17,24,39,.12);
+      padding: 14px 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      text-align: left;
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+      z-index: 4;
+    }
+
+    .ai-bubble:hover {
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: 0 22px 42px rgba(17,24,39,.15);
+      border-color: rgba(227,25,55,.34);
+    }
+
+    .ai-bubble .bubble-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--red), var(--red-2));
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 1rem;
+      font-weight: 800;
+      flex: 0 0 34px;
+      box-shadow: 0 8px 16px rgba(227,25,55,.18);
+    }
+
+    .ai-bubble .bubble-copy {
+      font-size: .94rem;
+      line-height: 1.38;
+      color: #111827;
+      font-weight: 600;
+    }
+
+    .ai-bubble .bubble-copy strong {
+      display: block;
+      color: var(--red);
+      font-size: 1rem;
+      margin-bottom: 2px;
+    }
+
+    .ai-bubble .bubble-link {
+      color: var(--red);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .ai-bubble::after {
+      content: "";
+      position: absolute;
+      right: 18px;
+      top: -8px;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-right: 1.5px solid rgba(227,25,55,.22);
+      border-top: 1.5px solid rgba(227,25,55,.22);
+      transform: rotate(45deg);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(17,24,39,.48);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 620px;
+      background: rgba(255,255,255,.98);
+      border: 1px solid rgba(229,231,235,.95);
+      border-radius: 26px;
+      box-shadow: 0 26px 56px rgba(17,24,39,.22);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .modal::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(227,25,55,.08), transparent 32%), radial-gradient(circle at top right, rgba(82,54,171,.08), transparent 26%);
+      pointer-events: none;
+    }
+
+    .modal > * { position: relative; z-index: 1; }
+
+    .modal h3 {
+      margin: 0 0 10px;
+      color: #111827;
+      font-size: 1.65rem;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+    }
+
+    .modal p {
+      margin: 0;
+      color: #374151;
+      line-height: 1.55;
+      font-size: 1rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .modal-actions a,
+    .modal-actions button {
+      appearance: none;
+      border: 0;
+      border-radius: 14px;
+      padding: 13px 18px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 1rem;
+    }
+
+    .modal-actions .open-pdf {
+      color: #fff;
+      background: linear-gradient(90deg, var(--red), var(--red-2));
+      box-shadow: 0 14px 28px rgba(227,25,55,.18);
+    }
+
+    .modal-actions .close-modal {
+      color: #111827;
+      background: #fff;
+      border: 1px solid #d7dbe1;
     }
 
     .answers {
@@ -674,6 +831,9 @@
       .sidebar { min-height: auto; }
       .main { min-height: auto; }
       .content-card { grid-template-columns: 1fr; }
+      .left-col { position: static; }
+      .ai-bubble { position: static; width: 100%; margin: 0 0 14px; }
+      .ai-bubble::after { display: none; }
       .logo-area { min-height: 300px; }
       .logo-stage .slot { min-height: 300px; }
     }
@@ -740,6 +900,13 @@
         <div class="left-col">
           <div class="slogan" aria-hidden="true">Building what's next</div>
           <div id="topicBanner" class="topic-banner">Bitte wähle zuerst ein Thema.</div>
+          <button type="button" class="ai-bubble hide" id="aiBubble" aria-label="Mehr über CGI AI erfahren">
+            <span class="bubble-icon" aria-hidden="true">i</span>
+            <span class="bubble-copy">
+              <strong>AI Offering</strong>
+              Sie wollen mehr über CGI&#39;s Offering im Bereich AI wissen? Hier gibt es einen ersten Einblick: <span class="bubble-link">Link</span>
+            </span>
+          </button>
           <h3 class="question-title" id="questionTitle">Wähle ein Thema links, um zu starten.</h3>
           <p class="question-subtitle" id="questionSubtitle">Die drei Fragen passen sich dem gewählten Themenfeld an.</p>
           <div class="answers" id="answers"></div>
@@ -797,6 +964,20 @@
         <span>Standalone HTML für GitHub Pages</span>
       </div>
     </main>
+  </div>
+
+  <div class="modal-overlay" id="aiModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="aiModalTitle">
+      <h3 id="aiModalTitle">Mehr über CGI AI und Transformation</h3>
+      <p>
+        Sie wollen mehr über CGI's Offering im Bereich AI wissen? Hier gibt es einen ersten Einblick.
+        Die PDF zeigt, wie CGI Unternehmen von der AI-Reifeanalyse über die Use-Case-Entwicklung bis zu Governance und Umsetzung begleitet.
+      </p>
+      <div class="modal-actions">
+        <a class="open-pdf" href="CGI_AI%20%26%20Transformation.pdf" target="_blank" rel="noopener">PDF öffnen</a>
+        <button class="close-modal" id="closeAiModal" type="button">Schließen</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -933,6 +1114,9 @@
     const logoC = document.getElementById("logoC");
     const logoG = document.getElementById("logoG");
     const logoI = document.getElementById("logoI");
+    const aiBubble = document.getElementById("aiBubble");
+    const aiModal = document.getElementById("aiModal");
+    const closeAiModal = document.getElementById("closeAiModal");
 
     let selectedTopicKey = null;
     let currentIndex = 0;
@@ -973,6 +1157,11 @@
       setLogoState();
     }
 
+    function updateAiBubble() {
+      const showBubble = selectedTopicKey === 'ai' && correctCount < 3;
+      aiBubble.classList.toggle('hide', !showBubble);
+    }
+
     function currentTopic() {
       return selectedTopicKey ? TOPICS[selectedTopicKey] : null;
     }
@@ -1005,6 +1194,7 @@
         answers.innerHTML = "";
         hint.innerHTML = '<span class="dot"></span><span>Das Gewinnspiel wird erst nach 3 korrekten Antworten freigeschaltet.</span>';
         nextButton.classList.add("hide");
+        updateAiBubble();
         return;
       }
 
@@ -1017,11 +1207,13 @@
         progressCount.textContent = "3 / 3 richtig";
         progressBar.style.width = "100%";
         setLogoState();
+        updateAiBubble();
         return;
       }
 
       contentCard.classList.remove("hide");
       winCard.classList.add("hide");
+      updateAiBubble();
 
       const q = currentQuestion();
       if (!q) return;
@@ -1046,6 +1238,17 @@
       } else {
         hint.innerHTML = `<span class="dot"></span><span>${question.mode === "multi" ? "Bei dieser Frage müssen alle richtigen Optionen gewählt werden." : "Wähle eine Antwort aus und prüfe sie anschließend."}</span>`;
       }
+    }
+
+
+    function openAiModal() {
+      aiModal.classList.add('show');
+      aiModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeAiModalFn() {
+      aiModal.classList.remove('show');
+      aiModal.setAttribute('aria-hidden', 'true');
     }
 
     function renderAnswers() {
@@ -1175,6 +1378,7 @@
       prepareQuestionOptions();
       updateProgress();
       renderTopicButtons();
+      updateAiBubble();
       renderQuestions();
     }
 
@@ -1187,9 +1391,19 @@
 
     nextButton.textContent = "Weiter";
 
+    aiBubble.addEventListener('click', openAiModal);
+    closeAiModal.addEventListener('click', closeAiModalFn);
+    aiModal.addEventListener('click', (event) => {
+      if (event.target === aiModal) closeAiModalFn();
+    });
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeAiModalFn();
+    });
+
     renderTopicButtons();
     renderQuestions();
     updateProgress();
+    updateAiBubble();
     setLogoState();
   </script>
 </body>
