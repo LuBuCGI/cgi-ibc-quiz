@@ -1,0 +1,2963 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CGI Quiz</title>
+  <style>
+    :root{
+      --bg:#f4f5f7;
+      --panel:#ffffff;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --border:#e5e7eb;
+      --red:#e31937;
+      --red-2:#5236ab;
+      --green:#2faf49;
+      --blue:#5236ab;
+      --shadow: 0 18px 40px rgba(17,24,39,.08);
+      --shadow-soft: 0 6px 22px rgba(17,24,39,.06);
+      --radius: 22px;
+      --radius-sm: 16px;
+      --sidebar: 320px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(225,29,72,.08), transparent 35%),
+        linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    button, input {
+      font: inherit;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--sidebar) 1fr;
+      gap: 20px;
+      padding: 18px;
+    }
+
+    body.intro-mode .app,
+    body.quiz-mode .app {
+      grid-template-columns: 1fr;
+    }
+
+    body.intro-mode .main {
+      display: none;
+    }
+
+    body.quiz-mode .sidebar {
+      display: none;
+    }
+
+    body.quiz-mode .main {
+      display: flex;
+    }
+
+    .quiz-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 2px 6px 2px;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+    }
+
+    .quiz-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .quiz-brand img {
+      display: block;
+      width: 172px;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .quiz-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      color: #111827;
+      font-size: .9rem;
+      padding: 12px 6px 2px;
+      margin-top: auto;
+      flex-wrap: wrap;
+      border-top: 3px solid var(--red);
+      background: linear-gradient(180deg, rgba(227,25,55,.03), rgba(255,255,255,0));
+    }
+
+    .quiz-footer strong { color: var(--red); }
+
+    .sidebar,
+    .main {
+      border-radius: 28px;
+    }
+
+    .sidebar {
+      background: rgba(255,255,255,.9);
+      border: 1px solid rgba(229,231,235,.9);
+      box-shadow: var(--shadow-soft);
+      padding: 18px 18px 16px;
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100vh - 36px);
+      overflow: hidden;
+    }
+
+    .logo-top {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 68px;
+      margin-bottom: 14px;
+    }
+
+    .logo-top img {
+      display: block;
+      width: 242px;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .intro-title {
+      margin: 8px 0 16px;
+      color: #111827;
+      font-size: clamp(1.42rem, 1.1vw + 1.08rem, 2.05rem);
+      line-height: 1.02;
+      font-weight: 950;
+      letter-spacing: -0.045em;
+    }
+
+    .intro-title .intro-main {
+      display: block;
+    }
+
+    .intro-title .intro-subtitle {
+      display: block;
+      margin-top: 6px;
+      font-size: .78em;
+      line-height: 1.16;
+      font-weight: 750;
+      letter-spacing: -0.02em;
+    }
+
+    .topic-intro {
+      margin-top: 18px;
+    }
+
+    .topic-intro h2 {
+      margin-top: 0;
+      margin-bottom: 6px;
+    }
+
+    .topic-intro p {
+      margin-top: 0;
+    }
+
+    .sidebar h2 {
+      margin: 18px 0 8px;
+      color: var(--red);
+      font-size: 1.7rem;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+
+    .sidebar p {
+      margin: 0;
+      color: #374151;
+      font-size: 1.05rem;
+      line-height: 1.45;
+      max-width: 100%;
+    }
+
+    .topic-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 26px;
+    }
+
+    .topic-btn {
+      width: 100%;
+      text-align: left;
+      border: 1.5px solid var(--border);
+      background: #fff;
+      border-radius: 18px;
+      padding: 18px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+      box-shadow: 0 1px 0 rgba(17,24,39,.02);
+    }
+
+    .topic-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(17,24,39,.06); }
+    .topic-btn.active {
+      border-color: var(--red);
+      background: linear-gradient(180deg, rgba(225,29,72,.04), rgba(225,29,72,.02));
+      box-shadow: 0 10px 24px rgba(225,29,72,.08);
+    }
+
+    .topic-icon {
+      width: 28px; height: 28px; flex: 0 0 28px;
+      display: grid; place-items: center;
+      color: var(--icon, var(--red));
+      font-size: 26px;
+      line-height: 1;
+    }
+
+    .topic-text {
+      flex: 1;
+      font-size: 1.05rem;
+      line-height: 1.25;
+      font-weight: 600;
+      color: #111827;
+    }
+
+    .topic-arrow {
+      color: #111827;
+      font-size: 1.45rem;
+      opacity: .7;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 20px;
+      border-top: 3px solid var(--red);
+    }
+
+    .city-card {
+      border-radius: 18px;
+      padding: 14px;
+      min-height: 140px;
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.99), rgba(255,255,255,.94));
+      color: #111827;
+      border: 1px solid rgba(227,25,55,.14);
+      box-shadow: 0 10px 24px rgba(17,24,39,.05);
+    }
+
+    .city-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(227,25,55,.08), rgba(82,54,171,.04)),
+        radial-gradient(circle at right bottom, rgba(227,25,55,.08), transparent 48%);
+      opacity: .35;
+      pointer-events: none;
+    }
+
+    .city-inner {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 112px;
+    }
+
+    .ibc-logo {
+      width: 58px;
+      height: 58px;
+      flex: 0 0 58px;
+      object-fit: contain;
+      display: block;
+      border-radius: 50%;
+      box-shadow: 0 8px 18px rgba(17,24,39,.10);
+      background: #fff;
+    }
+
+    .city-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 1rem;
+      line-height: 1.05;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .city-title {
+      color: #111827;
+      font-size: 1.08rem;
+      font-weight: 900;
+      letter-spacing: -.04em;
+    }
+
+    .city-text small {
+      display: block;
+      color: #4b5563;
+      font-size: .9rem;
+      line-height: 1.35;
+      font-weight: 600;
+      letter-spacing: 0;
+    }
+
+    .main {
+      background: rgba(255,255,255,.94);
+      border: 1px solid rgba(229,231,235,.92);
+      box-shadow: var(--shadow-soft);
+      padding: 20px;
+      min-height: calc(100vh - 36px);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .topline {
+      display: flex;
+      justify-content: flex-end;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 2px 6px 0;
+    }
+
+    .progress-card {
+      width: 100%;
+      margin: 8px 0 6px;
+      background: linear-gradient(180deg, rgba(255,255,255,.99), rgba(255,255,255,.94));
+      border: 1px solid rgba(229,231,235,.96);
+      border-radius: 20px;
+      box-shadow: 0 12px 24px rgba(17,24,39,.05);
+      padding: 16px 18px 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .progress-head {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 0;
+    }
+
+    .progress-label {
+      color: var(--red);
+      font-size: .98rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      text-align: center;
+    }
+
+    .progress-count {
+      width: 100%;
+      color: #374151;
+      font-weight: 600;
+      font-size: .84rem;
+      line-height: 1.32;
+      text-align: center;
+      white-space: normal;
+      overflow: visible;
+      text-overflow: clip;
+      min-height: 2.6em;
+      display: block;
+    }
+
+    .thumb-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      width: 100%;
+    }
+
+    .thumb-step {
+      width: 28px;
+      height: 28px;
+      flex: 0 0 28px;
+      display: grid;
+      place-items: center;
+      transition: transform .22s ease;
+      position: relative;
+    }
+
+    .thumb-icon {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      overflow: visible;
+      opacity: .38;
+      filter: grayscale(1) brightness(.32) contrast(1.45);
+      transform: scale(1);
+      transition:
+        opacity .24s ease,
+        filter .24s ease,
+        transform .24s cubic-bezier(.16,1,.3,1);
+      transform-origin: center center;
+    }
+
+    .thumb-step.filled .thumb-icon {
+      opacity: 1;
+      filter: none;
+    }
+
+    .thumb-step.active {
+      transform: translateY(-1px) scale(1.02);
+    }
+
+    .thumb-step.pop {
+      z-index: 2;
+    }
+
+    .thumb-step.pop .thumb-icon {
+      animation: badge-pop .54s cubic-bezier(.18,1,.28,1) both;
+      filter: drop-shadow(0 0 10px rgba(47,175,73,.18));
+    }
+
+    @keyframes badge-pop {
+      0% { transform: scale(1); }
+      34% { transform: scale(1.28); }
+      66% { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+
+    .content-card {
+      flex: 1;
+      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.94));
+      border-radius: 24px;
+      border: 1px solid rgba(229,231,235,.88);
+      box-shadow: 0 18px 36px rgba(17,24,39,.04);
+      padding: 26px 26px 22px;
+      display: grid;
+      grid-template-columns: 1.25fr .95fr;
+      gap: 22px;
+      align-items: start;
+      min-height: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .content-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(227,25,55,.05), transparent 28%), radial-gradient(circle at top right, rgba(82,54,171,.05), transparent 24%);
+      pointer-events: none;
+    }
+
+    .content-card > * { position: relative; z-index: 1; }
+
+    .left-col {
+      min-width: 0;
+      position: relative;
+    }
+
+    .question-row {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+
+    .question-meta {
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .question-title {
+      margin: 10px 0 18px;
+      font-size: 1.45rem;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .question-subtitle {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: .98rem;
+      line-height: 1.4;
+    }
+
+    .ai-bubble {
+      position: static;
+      top: auto;
+      right: auto;
+      width: 100%;
+      flex: 0 0 auto;
+      background: linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.88));
+      border: 1px solid rgba(227,25,55,.16);
+      border-radius: 18px;
+      box-shadow: 0 10px 24px rgba(17,24,39,.06);
+      padding: 13px 14px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      text-align: left;
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+      z-index: 1;
+      margin-left: 0;
+    }
+
+    .ai-bubble:hover {
+      transform: translateY(-1px) scale(1.005);
+      box-shadow: 0 14px 28px rgba(17,24,39,.08);
+      border-color: rgba(227,25,55,.28);
+    }
+
+    .ai-bubble .bubble-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--red), var(--red-2));
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 1rem;
+      font-weight: 800;
+      flex: 0 0 34px;
+      box-shadow: 0 8px 16px rgba(227,25,55,.18);
+    }
+
+    .ai-bubble .bubble-copy {
+      font-size: .94rem;
+      line-height: 1.38;
+      color: #111827;
+      font-weight: 600;
+    }
+
+    .ai-bubble .bubble-copy strong {
+      display: block;
+      color: var(--red);
+      font-size: 1rem;
+      margin-bottom: 2px;
+    }
+
+    .ai-bubble .bubble-link {
+      color: var(--red);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .ai-bubble::after {
+      content: "";
+      position: absolute;
+      right: 18px;
+      top: -8px;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-right: 1.5px solid rgba(227,25,55,.22);
+      border-top: 1.5px solid rgba(227,25,55,.22);
+      transform: rotate(45deg);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(17,24,39,.48);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 620px;
+      background: rgba(255,255,255,.98);
+      border: 1px solid rgba(229,231,235,.95);
+      border-radius: 26px;
+      box-shadow: 0 26px 56px rgba(17,24,39,.22);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .modal::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top left, rgba(227,25,55,.08), transparent 32%), radial-gradient(circle at top right, rgba(82,54,171,.08), transparent 26%);
+      pointer-events: none;
+    }
+
+    .modal > * { position: relative; z-index: 1; }
+
+    .modal h3 {
+      margin: 0 0 10px;
+      color: #111827;
+      font-size: 1.65rem;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+    }
+
+    .modal p {
+      margin: 0;
+      color: #374151;
+      line-height: 1.55;
+      font-size: 1rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .modal-actions a,
+    .modal-actions button {
+      appearance: none;
+      border: 0;
+      border-radius: 14px;
+      padding: 13px 18px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 1rem;
+    }
+
+    .modal-actions .open-pdf {
+      color: #fff;
+      background: linear-gradient(90deg, var(--red), var(--red-2));
+      box-shadow: 0 14px 28px rgba(227,25,55,.18);
+    }
+
+    .modal-actions .close-modal {
+      color: #111827;
+      background: #fff;
+      border: 1px solid #d7dbe1;
+    }
+
+    .answers {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .answer {
+      width: 100%;
+      border-radius: 16px;
+      border: 1.5px solid #d7dbe1;
+      background: #fff;
+      min-height: 60px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-align: left;
+      cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+      box-shadow: 0 1px 0 rgba(17,24,39,.02);
+    }
+
+    .answer:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(17,24,39,.04);
+    }
+
+    .answer .radio {
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 2px solid #aeb4bf;
+      position: relative;
+      flex: 0 0 18px;
+    }
+
+    .answer.selected {
+      border-color: #a7b3c8;
+      background: linear-gradient(180deg, rgba(37,99,235,.06), rgba(37,99,235,.03));
+    }
+
+    .answer.selected .radio::after {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      background: var(--blue);
+    }
+
+    .answer.correct {
+      border-color: rgba(22,163,74,.45);
+      background: linear-gradient(180deg, rgba(22,163,74,.12), rgba(22,163,74,.05));
+    }
+
+    .answer.incorrect {
+      border-color: rgba(225,29,72,.5);
+      background: linear-gradient(180deg, rgba(225,29,72,.10), rgba(225,29,72,.04));
+    }
+
+    .answer span.text {
+      font-size: 1.02rem;
+      line-height: 1.3;
+      color: #111827;
+      font-weight: 500;
+    }
+
+    .hint {
+      margin-top: 16px;
+      border-radius: 16px;
+      border: 1px solid #dbe0e7;
+      background: #fff;
+      padding: 14px 16px;
+      color: #374151;
+      font-size: .98rem;
+      line-height: 1.45;
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .hint .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--blue);
+      flex: 0 0 10px;
+    }
+
+    .controls {
+      margin-top: 18px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .primary, .secondary {
+      appearance: none;
+      border: 0;
+      border-radius: 14px;
+      min-width: 200px;
+      padding: 14px 22px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1.02rem;
+      transition: transform .15s ease, filter .15s ease, opacity .15s ease;
+    }
+
+    .primary:hover, .secondary:hover { transform: translateY(-1px); }
+    .primary {
+      color: #fff;
+      background: linear-gradient(90deg, var(--red), var(--red-2));
+      box-shadow: 0 14px 28px rgba(227,25,55,.18);
+    }
+
+    .secondary {
+      color: #111827;
+      background: #fff;
+      border: 1px solid #d7dbe1;
+    }
+
+    .topic-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      padding: 10px 14px;
+      color: #111827;
+      font-weight: 600;
+      margin-bottom: 8px;
+      box-shadow: 0 4px 12px rgba(17,24,39,.03);
+    }
+
+    .slogan {
+      margin: 0 0 10px;
+      color: var(--red);
+      font-size: clamp(1.45rem, 1.5vw + 1.2rem, 2.15rem);
+      line-height: 1.05;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      text-transform: none;
+    }
+
+    .logo-area {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      min-height: 360px;
+      padding: 20px 0 10px;
+    }
+
+    .logo-stage {
+      --cg-gap: -8px;
+      --gi-gap: 26px;
+      width: 100%;
+      max-width: 760px;
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      align-items: center;
+    }
+
+    .logo-stage .slot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 340px;
+      flex: 0 0 auto;
+    }
+
+    .logo-stage .slot + .slot {
+      margin-left: var(--cg-gap);
+    }
+
+    .logo-stage .slot:nth-child(3) {
+      margin-left: var(--gi-gap);
+    }
+
+    .logo-stage img {
+      display: block;
+      height: 300px;
+      width: auto;
+      max-width: 100%;
+      object-fit: contain;
+      filter: none;
+      transition: opacity .72s cubic-bezier(.16,1,.3,1), transform .72s cubic-bezier(.16,1,.3,1), filter .72s cubic-bezier(.16,1,.3,1);
+      opacity: 0;
+      transform: translateY(10px) scale(.985);
+      will-change: opacity, transform;
+      background: transparent;
+    }
+
+    .logo-stage img.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .logo-stage img.final {
+      filter: none;
+    }
+
+    .logo-stage .c { width: auto; max-width: none; }
+    .logo-stage .g { width: auto; max-width: none; }
+    .logo-stage .i { width: auto; max-width: none; transform-origin: center center; }
+    .logo-stage img.i.visible { transform: translateY(0) scale(1); }
+
+    .complete-box {
+      margin-top: 8px;
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(22,163,74,.10), rgba(22,163,74,.05));
+      border: 1px solid rgba(22,163,74,.22);
+      padding: 18px 18px 16px;
+    }
+
+    .complete-box h3 {
+      margin: 0 0 6px;
+      color: #166534;
+      font-size: 1.3rem;
+      line-height: 1.15;
+    }
+
+    .complete-box p {
+      margin: 0;
+      color: #374151;
+      line-height: 1.45;
+      max-width: 54ch;
+    }
+
+    .success-card .success-box {
+      background: linear-gradient(180deg, rgba(227,25,55,.05), rgba(255,255,255,.98));
+      border: 1px solid rgba(227,25,55,.14);
+    }
+
+    .success-actions {
+      margin-top: 14px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .secondary-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      border: 1px solid rgba(227,25,55,.18);
+      background: #fff;
+      color: var(--red);
+      padding: 11px 15px;
+      font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 6px 14px rgba(17,24,39,.04);
+    }
+
+    .secondary-link:hover {
+      border-color: rgba(227,25,55,.28);
+      text-decoration: none;
+    }
+
+    .success-card .question-subtitle {
+      max-width: 58ch;
+    }
+
+    .success-card {
+      opacity: 0;
+      transform: translateY(14px) scale(.985);
+      transition: opacity .42s cubic-bezier(.16,1,.3,1), transform .42s cubic-bezier(.16,1,.3,1);
+    }
+
+    .success-card.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .completion-mark {
+      position: relative;
+      width: 88px;
+      height: 88px;
+      margin: 2px 0 10px;
+      display: inline-grid;
+      place-items: center;
+      color: var(--green);
+      filter: drop-shadow(0 10px 18px rgba(47,175,73,.12));
+    }
+
+    .completion-mark::before {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border-radius: 50%;
+      border: 2.5px solid rgba(47,175,73,.22);
+      background: linear-gradient(180deg, rgba(47,175,73,.08), rgba(47,175,73,.02));
+      animation: success-pop 1.8s ease-in-out infinite;
+    }
+
+    .completion-mark::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1px solid rgba(47,175,73,.14);
+      opacity: .5;
+    }
+
+    .completion-check {
+      position: relative;
+      z-index: 1;
+      font-size: 2.1rem;
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    @keyframes success-pop {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .success-card .logo-area {
+      min-height: 300px;
+      align-items: flex-end;
+      padding-top: 0;
+    }
+
+    .success-card .logo-stage {
+      --cg-gap: -8px;
+      --gi-gap: 22px;
+    }
+
+    .success-card .logo-stage .slot {
+      min-height: 240px;
+    }
+
+    .success-card .logo-stage img {
+      height: 220px;
+    }
+
+    .success-card .logo-stage .c,
+    .success-card .logo-stage .g,
+    .success-card .logo-stage .i {
+      opacity: 1;
+      transform: none;
+    }
+
+    .form-grid {
+      margin-top: 16px;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .form-grid input {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid #d7dbe1;
+      padding: 13px 14px;
+      background: #fff;
+      color: #111827;
+    }
+
+    .form-grid .wide {
+      grid-column: 1 / -1;
+    }
+
+    .checkbox {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: .95rem;
+      color: #374151;
+      line-height: 1.4;
+      padding: 4px 2px;
+    }
+
+    .checkbox input {
+      margin-top: 3px;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--red);
+    }
+
+    .hide { display: none !important; }
+
+    .footer-note {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      color: var(--muted);
+      font-size: .9rem;
+      padding: 0 6px 2px;
+    }
+
+    .footer-note strong { color: #111827; }
+
+    .confetti-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 6;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      top: -18px;
+      width: var(--size, 10px);
+      height: calc(var(--size, 10px) * 1.8);
+      border-radius: 999px;
+      background: var(--piece-color, var(--red));
+      left: var(--left, 50%);
+      opacity: 0;
+      transform: translateY(-10px) rotate(0deg);
+      animation: confetti-fall var(--duration, 2200ms) linear infinite;
+      animation-delay: var(--delay, 0ms);
+      box-shadow: 0 2px 6px rgba(0,0,0,.08);
+    }
+
+    .confetti-piece.square {
+      width: var(--size, 10px);
+      height: var(--size, 10px);
+      border-radius: 2px;
+    }
+
+    .confetti-piece.slim {
+      border-radius: 999px;
+    }
+
+    @keyframes confetti-fall {
+      0% { transform: translate3d(0,-18px,0) rotate(0deg); opacity: 0; }
+      8% { opacity: 1; }
+      100% { transform: translate3d(var(--drift, 0px), 120vh, 0) rotate(var(--spin, 360deg)); opacity: 0; }
+    }
+
+
+
+    .export-strip {
+      margin-top: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 14px;
+    }
+
+    .export-status {
+      color: #374151;
+      font-size: .95rem;
+      line-height: 1.4;
+      flex: 1 1 260px;
+    }
+
+    .storage-note {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: .85rem;
+      line-height: 1.45;
+    }
+
+    .submit-message {
+      grid-column: 1 / -1;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      border-radius: 14px;
+      border: 1px solid #dbe0e7;
+      background: #fff;
+      padding: 10px 12px;
+      color: #374151;
+      font-size: .94rem;
+      line-height: 1.35;
+    }
+
+    .submit-message.success {
+      border-color: rgba(22,163,74,.35);
+      background: rgba(22,163,74,.08);
+      color: #166534;
+      font-weight: 600;
+    }
+
+    .submit-message.error {
+      border-color: rgba(227,25,55,.35);
+      background: rgba(227,25,55,.07);
+      color: #991f3d;
+      font-weight: 600;
+    }
+
+    .admin-open {
+      appearance: none;
+      border: 1px solid #d7dbe1;
+      background: #fff;
+      color: #111827;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(17,24,39,.04);
+    }
+
+    .modal.large {
+      max-width: 1040px;
+      max-height: min(86vh, 900px);
+      overflow: auto;
+    }
+
+    .admin-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .stat-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      background: #fff;
+      padding: 14px;
+      box-shadow: 0 8px 18px rgba(17,24,39,.04);
+    }
+
+    .stat-card .label {
+      color: var(--muted);
+      font-size: .82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .stat-card .value {
+      margin-top: 6px;
+      color: #111827;
+      font-size: 2rem;
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .analytics-section {
+      margin-top: 20px;
+      border-top: 1px solid #e5e7eb;
+      padding-top: 18px;
+    }
+
+    .analytics-section h4 {
+      margin: 0 0 10px;
+      color: #111827;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+    }
+
+    .admin-table-wrap {
+      overflow: auto;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      background: #fff;
+    }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+      font-size: .9rem;
+    }
+
+    .admin-table th,
+    .admin-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .admin-table th {
+      background: #f9fafb;
+      color: #111827;
+      font-weight: 800;
+    }
+
+    .admin-table tr:last-child td { border-bottom: 0; }
+
+    .bar-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 190px 1fr 48px;
+      gap: 10px;
+      align-items: center;
+      color: #374151;
+      font-size: .92rem;
+    }
+
+    .bar-track {
+      height: 10px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--red), var(--red-2));
+      min-width: 0;
+    }
+
+    .admin-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .danger {
+      color: #fff;
+      background: #991f3d;
+    }
+
+
+
+    /* Participant/Admin view handling */
+    body:not(.admin-view) .admin-only { display: none !important; }
+    body.admin-view .admin-mode-badge { display: inline-flex; }
+    .admin-mode-badge {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(82,54,171,.22);
+      background: rgba(82,54,171,.08);
+      color: #5236ab;
+      padding: 8px 12px;
+      font-weight: 800;
+      font-size: .85rem;
+      letter-spacing: .01em;
+    }
+
+    /* Professional legal intro card */
+    .entry-info {
+      margin-top: 16px;
+      border-radius: 20px;
+      border: 1px solid rgba(227,25,55,.14);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.94)),
+        radial-gradient(circle at top left, rgba(227,25,55,.05), transparent 42%);
+      box-shadow: 0 12px 28px rgba(17,24,39,.05);
+      padding: 14px;
+    }
+
+    .entry-info-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .age-badge {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      color: #fff;
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--red), var(--red-2));
+      box-shadow: 0 10px 22px rgba(227,25,55,.18);
+    }
+
+    .entry-info-title {
+      margin: 0;
+      color: #111827;
+      font-size: .98rem;
+      font-weight: 850;
+      letter-spacing: -.01em;
+      line-height: 1.25;
+    }
+
+    .entry-info-copy {
+      margin: 3px 0 0;
+      color: #4b5563;
+      font-size: .88rem;
+      line-height: 1.38;
+    }
+
+    .entry-flow {
+      margin-top: 14px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(227,25,55,.07), rgba(82,54,171,.06));
+      border: 1px solid rgba(227,25,55,.12);
+      padding: 13px 12px 14px;
+    }
+
+    .entry-flow-title {
+      margin: 0 0 12px;
+      color: #111827;
+      font-size: .95rem;
+      font-weight: 900;
+      letter-spacing: -.01em;
+    }
+
+    .entry-steps {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      align-items: start;
+    }
+
+    .entry-steps::before {
+      content: "";
+      position: absolute;
+      left: 15%;
+      right: 15%;
+      top: 18px;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(227,25,55,.45), rgba(82,54,171,.45));
+      z-index: 0;
+    }
+
+    .entry-step {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      color: #374151;
+      font-size: .76rem;
+      line-height: 1.25;
+      text-align: center;
+    }
+
+    .entry-step strong {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      background: #fff;
+      border: 2px solid var(--red);
+      color: var(--red);
+      font-size: .92rem;
+      font-weight: 950;
+      box-shadow: 0 8px 18px rgba(227,25,55,.16);
+    }
+
+    .entry-step span {
+      display: block;
+      max-width: 92px;
+      color: #222;
+      font-weight: 800;
+    }
+
+    .entry-details {
+      margin-top: 10px;
+      color: #4b5563;
+      font-size: .82rem;
+      line-height: 1.38;
+    }
+
+    .entry-details summary {
+      cursor: pointer;
+      list-style: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      color: #111827;
+      user-select: none;
+    }
+
+    .entry-details summary::-webkit-details-marker { display: none; }
+    .entry-details summary::after {
+      content: "›";
+      display: inline-block;
+      transform: rotate(90deg);
+      color: var(--red);
+      font-size: 1.1rem;
+      transition: transform .16s ease;
+    }
+    .entry-details[open] summary::after { transform: rotate(-90deg); }
+
+    .entry-details ul {
+      margin: 8px 0 0 18px;
+      padding: 0;
+    }
+
+    .entry-link-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .legal-pill-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(227,25,55,.18);
+      background: #fff;
+      color: var(--red);
+      padding: 8px 11px;
+      font-weight: 800;
+      font-size: .82rem;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(17,24,39,.04);
+    }
+
+    .legal-pill-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+    @media (max-width: 900px) {
+      .admin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .bar-row { grid-template-columns: 1fr; gap: 6px; }
+    }
+
+    @media (max-width: 1180px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { min-height: auto; }
+      .main { min-height: auto; }
+      .content-card { grid-template-columns: 1fr; }
+      .left-col { position: static; }
+      .question-row { flex-direction: column; }
+      .ai-bubble { width: 100%; margin: 0; }
+      .ai-bubble::after { display: none; }
+      .logo-area { min-height: 300px; }
+      .logo-stage .slot { min-height: 300px; }
+    }
+
+    @media (max-width: 720px) {
+      .app { padding: 12px; gap: 12px; }
+      .sidebar, .main { border-radius: 22px; }
+      .sidebar { padding: 14px; }
+      .main { padding: 14px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .logo-top img { width: 220px; }
+      .logo-stage { gap: 0; --cg-gap: -5px; --gi-gap: 17px; }
+      .logo-stage .slot { min-height: 220px; }
+      .logo-stage img { height: 190px; }
+      .question-title { font-size: 1.2rem; }
+      .primary, .secondary { width: 100%; min-width: 0; }
+    }
+
+    @media (max-width: 560px) {
+      .app { padding: 8px; gap: 10px; }
+      .sidebar, .main { border-radius: 18px; }
+      .sidebar { padding: 12px; }
+      .main { padding: 12px; gap: 14px; }
+      .logo-top { min-height: auto; margin-bottom: 10px; }
+      .logo-top img { width: 156px; }
+      .intro-title { font-size: clamp(1.18rem, 4.6vw, 1.55rem); line-height: 1.05; margin: 6px 0 12px; }
+      .sidebar h2 { font-size: 1.28rem; margin-top: 12px; }
+      .sidebar p { font-size: .94rem; line-height: 1.42; }
+      .entry-info { margin-top: 12px; padding: 12px; }
+      .entry-info-top { gap: 10px; }
+      .age-badge { width: 38px; height: 38px; font-size: 1rem; }
+      .entry-info-title { font-size: .92rem; }
+      .entry-info-copy { font-size: .82rem; }
+      .entry-flow { padding: 11px 10px 12px; }
+      .entry-flow-title { font-size: .9rem; margin-bottom: 10px; }
+      .entry-steps { grid-template-columns: 1fr; gap: 8px; }
+      .entry-steps::before { display: none; }
+      .entry-step { flex-direction: row; justify-content: flex-start; align-items: center; text-align: left; gap: 10px; }
+      .entry-step span { max-width: none; font-size: .78rem; }
+      .entry-details { font-size: .78rem; }
+      .entry-link-row { margin-top: 8px; }
+      .legal-pill-link { width: 100%; justify-content: center; }
+      .topic-intro { margin-top: 14px; }
+      .topic-list { margin-top: 16px; gap: 10px; }
+      .topic-btn { padding: 14px 13px; border-radius: 16px; }
+      .topic-icon { width: 24px; height: 24px; flex-basis: 24px; font-size: 22px; }
+      .topic-text { font-size: .96rem; }
+      .city-card { min-height: 128px; padding: 12px; }
+      .ibc-mark { width: 44px; height: 44px; font-size: 1.6rem; }
+      .city-text { font-size: .84rem; }
+      .quiz-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+      .quiz-brand img { width: 128px; }
+      .terms-link.quiz-legal-link { width: 100%; justify-content: center; }
+      .topline { justify-content: flex-end; }
+      .progress-card { width: 100%; max-width: none; padding: 11px 11px 9px; border-radius: 18px; }
+      .progress-head { gap: 8px; margin-bottom: 8px; align-items: flex-start; }
+      .progress-label { font-size: .92rem; }
+      .progress-count { font-size: .74rem; max-width: 100%; }
+      .thumb-row { gap: 7px; min-height: 28px; }
+      .thumb-step { width: 27px; height: 27px; flex-basis: 27px; }
+      .content-card { padding: 16px 14px 14px; gap: 16px; border-radius: 20px; }
+      .slogan { font-size: clamp(1.1rem, 5vw, 1.45rem); margin-bottom: 8px; }
+      .question-row { gap: 10px; margin-bottom: 2px; }
+      .question-title { font-size: 1.06rem; line-height: 1.2; margin: 8px 0 12px; }
+      .question-subtitle { font-size: .9rem; line-height: 1.38; margin-bottom: 12px; }
+      .ai-bubble { padding: 12px 12px; border-radius: 16px; }
+      .ai-bubble .bubble-icon { width: 30px; height: 30px; flex-basis: 30px; font-size: .95rem; }
+      .ai-bubble .bubble-copy { font-size: .88rem; line-height: 1.35; }
+      .answers { gap: 10px; margin-top: 14px; }
+      .answer { min-height: 52px; padding: 12px 12px; border-radius: 14px; gap: 11px; }
+      .answer span.text { font-size: .92rem; line-height: 1.25; }
+      .hint { margin-top: 12px; min-height: 56px; padding: 11px 12px; font-size: .88rem; }
+      .controls { margin-top: 14px; flex-direction: column; }
+      .primary, .secondary { width: 100%; min-width: 0; padding: 13px 16px; border-radius: 12px; }
+      .logo-area { min-height: 175px; padding: 4px 0 0; }
+      .logo-stage { --cg-gap: -4px; --gi-gap: 10px; max-width: 100%; }
+      .logo-stage .slot { min-height: 145px; }
+      .logo-stage img { height: 118px; }
+      .logo-stage .slot:nth-child(3) { margin-left: 10px; }
+      .complete-box { padding: 14px 12px 12px; border-radius: 18px; }
+      .complete-box h3 { font-size: 1.08rem; }
+      .complete-box p { font-size: .88rem; line-height: 1.38; }
+      .form-grid { margin-top: 12px; grid-template-columns: 1fr; gap: 10px; }
+      .form-grid input { padding: 12px 12px; border-radius: 12px; font-size: .96rem; }
+      .checkbox { font-size: .86rem; line-height: 1.34; }
+      .submit-message { min-height: 40px; font-size: .86rem; padding: 9px 11px; }
+      .export-strip { margin-top: 12px; padding-top: 12px; }
+      .storage-note { font-size: .78rem; margin-top: 10px; }
+      .quiz-footer, .footer-note { flex-direction: column; align-items: flex-start; font-size: .82rem; }
+      .quiz-footer { gap: 8px; }
+      .admin-open { width: 100%; justify-content: center; }
+      .modal { padding: 18px; border-radius: 20px; }
+      .modal h3 { font-size: 1.22rem; }
+      .modal p { font-size: .92rem; }
+      .modal-actions { flex-direction: column; }
+      .modal-actions a, .modal-actions button { width: 100%; justify-content: center; }
+      .modal.large { max-height: 88vh; }
+      .admin-grid { grid-template-columns: 1fr; }
+      .bar-row { grid-template-columns: 1fr; gap: 6px; }
+      .admin-table { min-width: 620px; }
+      .admin-actions { flex-direction: column; }
+      .admin-actions button { width: 100%; }
+      .sidebar p, .main p { word-break: normal; }
+    }
+
+    @media (max-width: 420px) {
+      .logo-top img { width: 138px; }
+      .city-card { min-height: 112px; }
+      .topic-btn { padding: 12px 12px; }
+      .topic-text { font-size: .92rem; }
+      .question-title { font-size: 1rem; }
+      .logo-stage img { height: 106px; }
+      .logo-stage .slot { min-height: 132px; }
+      .quiz-brand img { width: 118px; }
+    }
+  
+    @media (max-width: 980px) {
+      .city-inner {
+        min-height: 102px;
+      }
+
+      .ibc-logo {
+        width: 52px;
+        height: 52px;
+        flex-basis: 52px;
+      }
+
+      .city-text {
+        font-size: .98rem;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .quiz-footer {
+        align-items: flex-start;
+      }
+
+      .success-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .secondary-link,
+      .success-actions .primary {
+        width: 100%;
+      }
+    }
+
+  
+
+    /* v1.1 completion + newsletter refresh */
+    :root { --cgi-navy:#15183f; --cgi-purple:#4b168c; --cgi-magenta:#b40b62; --cgi-red:#e31937; }
+    .content-card, .topic-info-card, .progress-card, .complete-box { box-shadow: 0 18px 48px rgba(28,22,69,.08); }
+    .primary { background: linear-gradient(90deg,var(--cgi-red),var(--cgi-magenta),var(--cgi-purple)) !important; }
+    .success-card { background: linear-gradient(145deg,#fff 0%,#fbfaff 60%,#fff3f5 100%); overflow:hidden; position:relative; }
+    .success-card::after { content:""; position:absolute; right:-120px; bottom:-160px; width:420px; height:300px; border-radius:50%; background:linear-gradient(135deg,rgba(227,25,55,.16),rgba(75,22,140,.16)); pointer-events:none; }
+    .raffle-hero { text-align:center; position:relative; z-index:1; }
+    .raffle-kicker { font-size:clamp(38px,6vw,72px); font-weight:900; color:var(--cgi-navy); margin:4px 0 0; line-height:1; }
+    .raffle-sub { font-size:clamp(24px,3.3vw,42px); line-height:1.12; margin:18px auto 18px; color:var(--cgi-navy); max-width:760px; }
+    .raffle-sub strong { color:var(--cgi-red); }
+    .raffle-visual { width:min(390px,72vw); margin:10px auto 22px; display:block; filter:drop-shadow(0 18px 20px rgba(28,22,69,.14)); }
+    .newsletter-cta { display:flex; align-items:center; gap:18px; max-width:720px; margin:22px auto 16px; padding:20px 24px; border:1px solid #e4e2ec; border-radius:24px; background:#fff; text-align:left; box-shadow:0 12px 32px rgba(28,22,69,.08); cursor:pointer; transition:.2s ease; }
+    .newsletter-cta:hover { transform:translateY(-2px); box-shadow:0 16px 38px rgba(28,22,69,.12); }
+    .newsletter-icon { width:64px; height:64px; flex:0 0 64px; border-radius:50%; display:grid; place-items:center; font-size:30px; background:linear-gradient(145deg,#fff,#f2eff9); color:var(--cgi-red); }
+    .newsletter-cta strong { display:block; font-size:clamp(19px,2.2vw,27px); color:var(--cgi-navy); }
+    .newsletter-cta span { display:block; margin-top:4px; font-size:18px; color:var(--cgi-red); font-weight:800; }
+    .success-secondary { display:flex; justify-content:center; gap:14px; flex-wrap:wrap; margin-top:18px; }
+    .newsletter-card { background:linear-gradient(145deg,#fff 0%,#fbfaff 68%,#fff3f5 100%); }
+    .newsletter-shell { max-width:760px; margin:0 auto; width:100%; }
+    .newsletter-shell h3 { font-size:clamp(30px,4vw,48px); color:var(--cgi-navy); margin:0 0 10px; }
+    .newsletter-shell .question-subtitle { max-width:650px; }
+    .newsletter-privacy { display:flex; align-items:flex-start; gap:10px; padding:16px; border:1px solid #dedbe8; border-radius:16px; background:#fff; }
+    .newsletter-privacy input { margin-top:4px; width:18px; height:18px; }
+    .newsletter-privacy a { color:var(--cgi-red); font-weight:800; }
+    .newsletter-message { min-height:24px; margin-top:10px; font-weight:700; }
+    .newsletter-message.error { color:#b42318; }
+    .newsletter-message.success { color:#16823b; }
+    @media (max-width:700px){ .newsletter-cta{padding:16px;gap:12px}.newsletter-icon{width:52px;height:52px;flex-basis:52px}.raffle-visual{width:min(310px,80vw)} }
+
+
+    /* v1.2 unified CGI visual system */
+    body {
+      background:
+        radial-gradient(circle at 92% 8%, rgba(82,54,171,.16), transparent 24%),
+        radial-gradient(circle at 10% 92%, rgba(227,25,55,.12), transparent 26%),
+        linear-gradient(145deg,#fff 0%,#fbfaff 56%,#fff3f5 100%);
+    }
+    body::after { content:""; position:fixed; inset:auto 0 0 0; height:9px; z-index:1000; background:linear-gradient(90deg,#ed1b2f 0%,#cf0a55 42%,#5a198c 100%); pointer-events:none; }
+    .sidebar, .main, .content-card, .newsletter-card { background:rgba(255,255,255,.94); }
+    .main { border-color:rgba(82,54,171,.12); box-shadow:0 24px 70px rgba(40,23,78,.10); }
+    .content-card { border-color:rgba(82,54,171,.10); }
+    .quiz-header { border-bottom:1px solid rgba(82,54,171,.10); padding-bottom:12px; }
+    .intro-main { color:var(--cgi-navy); }
+    .intro-subtitle, .quiz-subheadline { display:block; margin-top:10px; color:#3f3b58; font-weight:650; letter-spacing:-.015em; }
+    .intro-title .intro-main { font-size:clamp(1.55rem,3.1vw,2.55rem); line-height:1.02; }
+    .intro-title .intro-subtitle { font-size:clamp(.98rem,1.65vw,1.3rem); line-height:1.35; }
+    .quiz-hero-copy { margin-bottom:16px; }
+    .quiz-hero-copy .slogan { font-size:clamp(1.55rem,2.8vw,2.5rem); line-height:1.03; color:var(--cgi-navy); font-weight:900; letter-spacing:-.045em; }
+    .quiz-subheadline { font-size:clamp(.92rem,1.35vw,1.12rem); line-height:1.35; max-width:760px; }
+
+    .quiz-tools-row { position:sticky; top:8px; z-index:40; display:grid; grid-template-columns:minmax(270px,.9fr) minmax(340px,1.35fr); gap:12px; align-items:stretch; margin:4px 0 18px; }
+    .quiz-tools-row::before { content:""; position:absolute; inset:-8px -8px; z-index:-1; border-radius:24px; background:rgba(255,255,255,.93); backdrop-filter:blur(12px); box-shadow:0 10px 30px rgba(28,22,69,.07); }
+    .progress-card { margin:0; min-height:112px; padding:12px 16px; border-radius:18px; gap:8px; justify-content:center; box-shadow:none; border:1px solid rgba(82,54,171,.16); }
+    .progress-label { color:var(--cgi-navy); font-size:.88rem; }
+    .progress-count { min-height:auto; font-size:.78rem; line-height:1.2; }
+    .thumb-row { min-height:30px; gap:12px; }
+    .thumb-step { width:25px; height:25px; flex-basis:25px; }
+
+    .ai-bubble { width:100%; margin:0; min-height:112px; padding:14px 16px; border:0; border-radius:18px; color:#fff; background:linear-gradient(110deg,#ed1b2f 0%,#c30d57 45%,#5b1b8c 100%); box-shadow:0 12px 28px rgba(115,22,94,.20); display:flex; align-items:center; gap:13px; text-align:left; }
+    .ai-bubble:hover { transform:translateY(-1px); box-shadow:0 16px 34px rgba(115,22,94,.26); }
+    .ai-bubble::after { display:none; }
+    .ai-bubble .bubble-copy { color:#fff; font-size:.9rem; line-height:1.3; }
+    .ai-bubble .bubble-copy strong { color:#fff; font-size:1rem; }
+    .ai-bubble .bubble-link { color:#fff; font-weight:900; text-decoration:underline; text-underline-offset:3px; }
+    .offering-doc-icon { width:38px; height:38px; flex:0 0 38px; border:1px solid rgba(255,255,255,.48); border-radius:10px; display:grid; place-items:center; font-size:22px; background:rgba(255,255,255,.10); }
+    .offering-info-icon { margin-left:auto; width:26px; height:26px; flex:0 0 26px; border:1px solid rgba(255,255,255,.72); border-radius:50%; display:grid; place-items:center; font-weight:900; }
+
+    .question-title { margin:4px 0 10px; font-size:clamp(1.25rem,2.15vw,1.85rem); color:var(--cgi-navy); }
+    .feedback-panel { margin:0 0 12px; min-height:52px; border-radius:14px; border:1px solid #d8dce5; background:#f8f9fb; color:#3f4655; font-size:.98rem; font-weight:750; box-shadow:none; }
+    .feedback-panel.state-correct { border-color:#75c58a; background:#eefaf1; color:#16743a; }
+    .feedback-panel.state-wrong { border-color:#f2a1aa; background:#fff1f3; color:#b4232d; }
+    .feedback-panel.state-neutral { border-color:#d8dce5; background:#f8f9fb; color:#3f4655; }
+    .feedback-panel .dot { width:22px; height:22px; flex:0 0 22px; display:grid; place-items:center; background:#747b8a; color:#fff; }
+    .feedback-panel.state-correct .dot { background:#159447 !important; }
+    .feedback-panel.state-wrong .dot { background:#d92d3c !important; }
+    .answers button, .answer-option { border-radius:12px; }
+    .controls .primary, .controls button:not(.secondary), button.primary { background:linear-gradient(90deg,#ed1b2f,#c20e59 48%,#5b1b8c); }
+    .visually-hidden { position:absolute!important; width:1px!important; height:1px!important; overflow:hidden!important; clip:rect(0 0 0 0)!important; white-space:nowrap!important; }
+
+    .complete-card, #completionCard, #newsletterCard { background:linear-gradient(145deg,#fff 0%,#fbfaff 66%,#fff3f5 100%); }
+    .newsletter-cta { border-color:rgba(82,54,171,.14); }
+    .sidebar-footer .city-card { border-color:rgba(82,54,171,.14); }
+
+    @media (max-width:900px){
+      .quiz-tools-row { grid-template-columns:1fr; position:static; }
+      .quiz-tools-row::before { display:none; }
+      .progress-card,.ai-bubble { min-height:auto; }
+    }
+    @media (max-width:700px){
+      .quiz-hero-copy .slogan { font-size:1.45rem; }
+      .quiz-subheadline { font-size:.92rem; }
+      .quiz-tools-row { gap:9px; margin-bottom:14px; }
+      .ai-bubble { padding:12px; }
+      .progress-card { padding:11px 12px; }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo-top">
+        <img src="assets/logo50.png" alt="CGI" />
+      </div>
+
+      <h1 class="intro-title"><span class="intro-main">Empower every story. Enable every broadcast.</span><span class="intro-subtitle">Secure. Resilient. Scalable. Trusted to transform media operations.</span></h1>
+
+      <div class="entry-info" aria-label="Prize draw information">
+        <div class="entry-info-top">
+          <span class="age-badge" aria-hidden="true">18+</span>
+          <div>
+            <p class="entry-info-title">Participation from age 18 only</p>
+            <p class="entry-info-copy">By submitting the form, you confirm that you are at least 18 years old.</p>
+          </div>
+        </div>
+
+        <div class="entry-flow" aria-label="How the prize draw works">
+          <p class="entry-flow-title">Three steps to the prize draw</p>
+          <div class="entry-steps">
+            <div class="entry-step"><strong>1</strong><span>Choose a topic</span></div>
+            <div class="entry-step"><strong>2</strong><span>Answer 3 questions correctly</span></div>
+            <div class="entry-step"><strong>3</strong><span>Formular absenden</span></div>
+          </div>
+        </div>
+
+        <details class="entry-details">
+          <summary>Prize draw details</summary>
+          <ul>
+            <li>All mandatory fields must be completed to enter.</li>
+            <li>One entry per person per event day is permitted.</li>
+            <li>Die Auslosung erfolgt täglich ca. 2 Stunden vor Ende des Veranstaltungstages.</li>
+            <li>Participation is free and does not require a purchase.</li>
+          </ul>
+        </details>
+
+        <div class="entry-link-row">
+          <a class="legal-pill-link" href="pdf/terms-and-conditions.pdf" target="_blank" rel="noopener">Open Terms & Conditions</a>
+        </div>
+      </div>
+
+      <div class="topic-intro">
+        <h2>Choose Your topic</h2>
+        <p>Which of the following topics is currently most important to Your professional work?</p>
+      </div>
+
+      <div class="topic-list" id="topicList"></div>
+
+      <div class="sidebar-footer">
+        <div class="city-card" aria-hidden="true">
+          <div class="city-inner">
+            <img class="ibc-logo" src="assets/ibc-logo-red.png" alt="" />
+            <div class="city-text">
+              <div class="city-title">IBC2026</div>
+              <small>11–14 September 2026<br />RAI Amsterdam</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="quiz-header" aria-label="Brand header">
+        <div class="quiz-brand">
+          <img src="assets/logo50.png" alt="CGI 50 Jahre" />
+        </div>
+        <a class="terms-link quiz-legal-link" href="pdf/terms-and-conditions.pdf" target="_blank" rel="noopener">Terms & Conditions</a>
+        <span class="admin-mode-badge" aria-label="Adminmodus aktiv">Adminmodus</span>
+      </div>
+
+      <section class="content-card" id="contentCard">
+        <div class="left-col">
+          <div class="quiz-hero-copy"><div class="slogan">Empower every story. Enable every broadcast.</div><div class="quiz-subheadline">Secure. Resilient. Scalable. Trusted to transform media operations.</div></div>
+          <div id="topicBanner" class="topic-banner visually-hidden">Please choose a topic first.</div>
+          <div class="quiz-tools-row">
+            <div class="progress-card" aria-live="polite" aria-label="Quizfortschritt">
+              <div class="progress-head"><div class="progress-label" id="progressLabel">Your progress</div></div>
+              <div class="thumb-row" id="progressBar" aria-label="Drei Symbole als Fortschrittsanzeige">
+                <span class="thumb-step" data-step="1" aria-hidden="true"><img class="thumb-icon" src="assets/progress-badge.png" alt="" /></span>
+                <span class="thumb-step" data-step="2" aria-hidden="true"><img class="thumb-icon" src="assets/progress-badge.png" alt="" /></span>
+                <span class="thumb-step" data-step="3" aria-hidden="true"><img class="thumb-icon" src="assets/progress-badge.png" alt="" /></span>
+              </div>
+              <div class="progress-count" id="progressCount">Choose a topic and answer 3 questions.</div>
+            </div>
+            <button type="button" class="ai-bubble hide" id="aiBubble" aria-label="Learn more about the selected topic">
+              <span class="offering-doc-icon" aria-hidden="true">▤</span>
+              <span class="bubble-copy"><strong id="topicBubbleTitle">Topic information</strong><span id="topicBubbleText">Get a first overview here: <span class="bubble-link">Open →</span></span></span>
+              <span class="offering-info-icon" aria-hidden="true">i</span>
+            </button>
+          </div>
+          <h3 class="question-title" id="questionTitle">Choose a topic to get started.</h3>
+          <div class="hint feedback-panel" id="hint"><span class="dot"></span><span>Select an answer.</span></div>
+          <p class="question-subtitle" id="questionSubtitle">The three questions are based on Your selected topic.</p>
+          <div class="answers" id="answers"></div>
+          <div class="controls">
+            <button class="secondary hide" id="nextButton" type="button">Continue</button>
+          </div>
+        </div>
+
+        <div class="logo-area">
+          <div class="logo-stage" aria-label="CGI Logo Aufbau">
+            <div class="slot"><img id="logoC" class="c" src="assets/cgi-c.png" alt="CGI C" /></div>
+            <div class="slot"><img id="logoG" class="g" src="assets/cgi-g.png" alt="CGI G" /></div>
+            <div class="slot"><img id="logoI" class="i" src="assets/cgi-i.png" alt="CGI I" /></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="content-card hide" id="winCard">
+        <div class="confetti-layer hide" id="confettiLayer" aria-hidden="true"></div>
+        <div class="left-col">
+          <div class="topic-banner">Prize draw unlocked</div>
+          <h3 class="question-title" style="margin-bottom:10px;">Congratulations! The logo is complete.</h3>
+          <p class="question-subtitle">Enter Your contact details now to take part in the prize draw.</p>
+
+          <div class="complete-box">
+            <h3>Participation form</h3>
+            <p class="form-required-note"><span class="field-note">All fields are mandatory.</span> You cannot enter the prize draw without complete information. By submitting the form, You also confirm that You are at least 18 years old.</p>
+
+            <form class="form-grid" id="leadForm">
+              <input id="leadFirstName" name="firstName" type="text" placeholder="First name *" autocomplete="given-name" required aria-label="First name required" />
+              <input id="leadLastName" name="lastName" type="text" placeholder="Last name *" autocomplete="family-name" required aria-label="Last name required" />
+              <input id="leadCompany" class="wide" name="company" type="text" placeholder="Company *" autocomplete="organization" required aria-label="Company required" />
+              <input id="leadEmail" class="wide" name="email" type="email" placeholder="Email *" autocomplete="email" required aria-label="Email required field" />
+              <label class="checkbox">
+                <input id="leadConsent" name="consent" type="checkbox" required />
+                <span>I confirm that I am at least 18 years old and accept the <a class="terms-link" href="pdf/terms-and-conditions.pdf" target="_blank" rel="noopener">Terms & Conditions</a>.</span>
+              </label>
+              <div id="submitMessage" class="submit-message">Please complete all mandatory fields and accept the Terms & Conditions.</div>
+              <button class="primary wide" type="submit">Submit entry</button>
+            </form>
+
+            <div class="export-strip admin-only">
+              <div class="export-status" id="exportStatus">No entries saved yet.</div>
+              <button class="secondary" id="exportExcelBtn" type="button" disabled>Export Excel</button>
+            </div>
+            <p class="storage-note admin-only">The data is stored locally in the browser on this device only. Export and analytics are available in the admin area. <a class="terms-link" href="pdf/terms-and-conditions.pdf" target="_blank" rel="noopener">Terms & Conditions</a></p>
+          </div>
+        </div>
+
+        <div class="logo-area">
+          <div class="logo-stage" aria-label="CGI Logo vollständig">
+            <div class="slot"><img class="c visible final" src="assets/cgi-c.png" alt="CGI C" /></div>
+            <div class="slot"><img class="g visible final" src="assets/cgi-g.png" alt="CGI G" /></div>
+            <div class="slot"><img class="i visible final" src="assets/cgi-i.png" alt="CGI I" /></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="content-card hide success-card" id="successCard">
+        <div class="left-col raffle-hero">
+          <div class="topic-banner">Entry successful</div>
+          <h3 class="raffle-kicker">Done!</h3>
+          <p class="raffle-sub">Your entry is in the <strong>prize draw.</strong></p>
+          <img class="raffle-visual" src="assets/raffle-bowl.svg" alt="Lostopf mit Losen" />
+
+          
+
+          <div class="success-secondary">
+            <button class="primary" id="backToStartBtn" type="button">Next participant</button>
+            <a class="secondary-link" href="pdf/terms-and-conditions.pdf" target="_blank" rel="noopener">Terms & Conditions</a>
+          </div>
+        </div>
+        <div class="logo-area">
+          <div class="logo-stage" aria-label="CGI Logo vollständig">
+            <div class="slot"><img class="c visible final" src="assets/cgi-c.png" alt="CGI C" /></div>
+            <div class="slot"><img class="g visible final" src="assets/cgi-g.png" alt="CGI G" /></div>
+            <div class="slot"><img class="i visible final" src="assets/cgi-i.png" alt="CGI I" /></div>
+          </div>
+        </div>
+      </section>
+
+      
+      <div class="quiz-footer">
+        <span><strong>IBC2026:</strong> 11–14 September 2026 · RAI Amsterdam</span>
+        <a class="terms-link" href="pdf/terms-and-conditions.pdf" target="_blank" rel="noopener">Terms & Conditions</a>
+        <a class="terms-link" href="index.html">DE / EN</a>
+        <button class="admin-open admin-only" id="adminOpen" type="button">Admin / Analytics</button>
+      </div>
+    </main>
+  </div>
+
+
+  <div class="modal-overlay" id="adminModal" aria-hidden="true">
+    <div class="modal large" role="dialog" aria-modal="true" aria-labelledby="adminModalTitle">
+      <h3 id="adminModalTitle">Admin & Analytics</h3>
+      <p>Local overview of prize draw entries, topic interests and interactions. The data is stored on this device only.</p>
+
+      <div class="admin-grid">
+        <div class="stat-card"><div class="label">Entries</div><div class="value" id="statLeads">0</div></div>
+        <div class="stat-card"><div class="label">Startede Quizze</div><div class="value" id="statStarts">0</div></div>
+        <div class="stat-card"><div class="label">Completede Quizze</div><div class="value" id="statCompletions">0</div></div>
+        <div class="stat-card"><div class="label">PDF opens</div><div class="value" id="statPdfAi">0</div></div>
+      </div>
+
+      <div class="analytics-section">
+        <h4>Topic interest</h4>
+        <div class="bar-list" id="topicAnalytics"></div>
+      </div>
+
+      <div class="analytics-section">
+        <h4>Most frequently answered incorrectly</h4>
+        <div class="bar-list" id="wrongAnalytics"></div>
+      </div>
+
+      <div class="analytics-section">
+        <h4>Saved entries</h4>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Timestamp</th><th>Name</th><th>Company</th><th>Email</th><th>Topic</th><th>Topic PDF</th></tr>
+            </thead>
+            <tbody id="leadTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="admin-actions">
+        <button class="primary" id="adminExportXlsx" type="button">Export Excel</button>
+        <button class="secondary" id="adminExportCsv" type="button">CSV exportieren</button>
+        <button class="secondary" id="adminClose" type="button">Close</button>
+        <button class="secondary danger" id="adminClearLeads" type="button">Delete entries</button>
+        <button class="secondary danger" id="adminResetStats" type="button">Reset analytics</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="aiModal" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="aiModalTitle">
+      <h3 id="aiModalTitle">More about the selected topic</h3>
+      <p id="aiModalText">
+        Hier gibt es einen ersten Einblick in das passende CGI Offering.
+      </p>
+      <div class="modal-actions">
+        <a class="open-pdf" id="aiPdfLink" href="pdf/ai-strategy-en.pdf" target="_blank" rel="noopener">PDF öffnen</a>
+        <button class="close-modal" id="closeAiModal" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.body.classList.add('intro-mode');
+    const params = new URLSearchParams(window.location.search);
+    const isAdminMode = params.get('admin') === '1' || window.location.hash === '#admin';
+    if (isAdminMode) document.body.classList.add('admin-view');
+
+    const TOPICS = {
+      ai: { label: "AI strategy and implementation", icon: "🧠", questions: [
+        { mode: "single", question: "Which of the following is not an AI chatbot?", options: ["ChatGPT", "Claude", "Gemini", "Google Search"], answer: "Google Search", explanation: "Google Search is the correct answer." },
+        { mode: "single", question: "What is the first important step when introducing an AI solution in a company?", options: ["Cost-benefit assessment", "Selecting the right technology", "Needs assessment", "Testing different options"], answer: "Needs assessment", explanation: "A needs assessment is the correct first step." },
+        { mode: "single", question: "What is the biggest challenge for most companies when successfully introducing AI?", options: ["Employee acceptance", "Strategic integration of the tools", "Finding a suitable use case", "Selecting the best technology"], answer: "Strategic integration of the tools", explanation: "Strategic integration of the tools is the correct answer." }
+      ]},
+      cyber: { label: "Cybersecurity", icon: "🛡️", questions: [
+        { mode: "single", question: "Effective cybersecurity strategies …", options: ["Eliminate every risk of external attacks", "Continuously evolve to adapt to changing threats", "Are set up once and then remain valid forever", "Are not necessary for every company"], answer: "Continuously evolve to adapt to changing threats", explanation: "Cybersecurity strategies must continuously evolve." },
+        { mode: "single", question: "Cybersecurity must adapt to current regulatory requirements. Which of the following is NOT one of these requirements?", options: ["NIS2", "KRITIS", "DORA", "NEMO3"], answer: "NEMO3", explanation: "NEMO3 is not one of the listed regulatory requirements." },
+        { mode: "single", question: "What does SOC stand for?", options: ["Sport or Chillin", "Security Operations Center", "Safe our Cheese", "Security on Charge"], answer: "Security Operations Center", explanation: "SOC stands for Security Operations Center." }
+      ]},
+      cloud: { label: "Cloud and Sovereignty", icon: "☁️", questions: [
+        { mode: "single", question: "What is a key advantage of cloud computing?", options: ["Works without internet", "Flexible scalability", "No security risks", "Free IT resources"], answer: "Flexible scalability", explanation: "Flexible scalability is a key advantage of cloud computing." },
+        { mode: "single", question: "Which aspect is particularly relevant when it comes to cloud sovereignty?", options: ["Collecting as much data as possible", "Cooperating with other users", "Control over data and its processing", "The colour of the company logo"], answer: "Control over data and its processing", explanation: "Control over data and its processing is particularly relevant to cloud sovereignty." },
+        { mode: "single", question: "Which cloud model is operated exclusively for a single organisation?", options: ["Public Cloud", "Private Cloud", "Open Cloud", "Social Cloud"], answer: "Private Cloud", explanation: "A Private Cloud is operated exclusively for a single organisation." }
+      ]},
+      integration: { label: "System Integration", icon: "🧩", questions: [
+        { mode: "single", question: "What is a typical objective of system integration?", options: ["Enable data exchange between different applications", "Increase screen resolution", "Print documents", "Manage passwords manually"], answer: "Enable data exchange between different applications", explanation: "System integration enables data exchange between different applications." },
+        { mode: "single", question: "Which technology is commonly used to connect applications through standardised interfaces?", options: ["API", "PDF", "PNG", "Bluetooth keyboard"], answer: "API", explanation: "APIs connect applications through standardised interfaces." },
+        { mode: "single", question: "Which of the following is not a typical system integration tool?", options: ["MuleSoft", "Boomi", "SAP Integration Suite", "Microsoft Word"], answer: "Microsoft Word", explanation: "Microsoft Word is not a typical system integration tool." }
+      ]}
+    };
+
+
+const TOPIC_RESOURCES = {
+  ai: { pdfPath: "pdf/ai-strategy-en.pdf", title: "AI Offering", bubbleCopy: "Want to learn more about CGI's offering in AI strategy and implementation? Get a first overview here.", modalTitle: "More about CGI AI Strategy and Implementation", modalText: "The PDF covers the journey from status-quo analysis and use-case ideation through governance and implementation." },
+  cyber: { pdfPath: "pdf/cybersecurity-en.pdf", title: "Cybersecurity", bubbleCopy: "Want to learn more about CGI's cybersecurity offering? Get a first overview here.", modalTitle: "More about CGI Cybersecurity for resilient IT", modalText: "The PDF presents cybersecurity as a continuously evolving strategy and shows how CGI supports clients with Security Consulting, Managed Services and Incident Response." },
+  cloud: { pdfPath: "pdf/cloud-sovereignty-en.pdf", title: "Cloud & Sovereignty", bubbleCopy: "Want to learn more about CGI's Cloud & Sovereignty offering? Get a first overview here.", modalTitle: "More about CGI Cloud & Sovereignty", modalText: "The PDF presents cloud services from strategy to operations, selecting the right technology partner and building a solution that remains secure in operation." },
+  integration: { pdfPath: "pdf/system-integration-en.pdf", title: "System Integration", bubbleCopy: "Want to learn more about CGI's System Integration offering? Get a first overview here.", modalTitle: "More about CGI System Integration", modalText: "The PDF presents the end-to-end approach from planning through implementation – without being tied to a specific vendor or technology." }
+};
+
+    const topicList = document.getElementById("topicList");
+    const progressLabel = document.getElementById("progressLabel");
+    const progressCount = document.getElementById("progressCount");
+    const progressBar = document.getElementById("progressBar");
+    const questionTitle = document.getElementById("questionTitle");
+    const questionSubtitle = document.getElementById("questionSubtitle");
+    const answers = document.getElementById("answers");
+    const hint = document.getElementById("hint");
+    const topicBanner = document.getElementById("topicBanner");
+    const nextButton = document.getElementById("nextButton");
+    const contentCard = document.getElementById("contentCard");
+    const winCard = document.getElementById("winCard");
+    const successCard = document.getElementById("successCard");
+    const newsletterCard = document.getElementById("newsletterCard");
+    const newsletterCta = document.getElementById("newsletterCta");
+    const newsletterForm = document.getElementById("newsletterForm");
+    const newsletterEmail = document.getElementById("newsletterEmail");
+    const newsletterConsent = document.getElementById("newsletterConsent");
+    const newsletterMessage = document.getElementById("newsletterMessage");
+    const newsletterBackBtn = document.getElementById("newsletterBackBtn");
+    const newsletterNextParticipantBtn = document.getElementById("newsletterNextParticipantBtn");
+    const logoC = document.getElementById("logoC");
+    const logoG = document.getElementById("logoG");
+    const logoI = document.getElementById("logoI");
+    const aiBubble = document.getElementById("aiBubble");
+    const aiModal = document.getElementById("aiModal");
+    const closeAiModal = document.getElementById("closeAiModal");
+    const aiPdfLink = document.getElementById("aiPdfLink");
+    const leadForm = document.getElementById("leadForm");
+    const leadFirstName = document.getElementById("leadFirstName");
+    const leadLastName = document.getElementById("leadLastName");
+    const leadCompany = document.getElementById("leadCompany");
+    const leadEmail = document.getElementById("leadEmail");
+    const leadConsent = document.getElementById("leadConsent");
+    const submitMessage = document.getElementById("submitMessage");
+    const exportStatus = document.getElementById("exportStatus");
+    const exportExcelBtn = document.getElementById("exportExcelBtn");
+    const adminOpen = document.getElementById("adminOpen");
+    const adminModal = document.getElementById("adminModal");
+    const adminClose = document.getElementById("adminClose");
+    const adminExportXlsx = document.getElementById("adminExportXlsx");
+    const adminExportCsv = document.getElementById("adminExportCsv");
+    const adminClearLeads = document.getElementById("adminClearLeads");
+    const adminResetStats = document.getElementById("adminResetStats");
+
+    const LEADS_STORAGE_KEY = "cgi-ibc-quiz-leads-v1";
+    const NEWSLETTER_STORAGE_KEY = "cgi-ibc-newsletter-interest-v1";
+    const ANALYTICS_STORAGE_KEY = "cgi-ibc-quiz-analytics-v1";
+
+    let leads = loadLeads();
+    let analytics = loadAnalytics();
+    let currentSession = createSession();
+
+    let selectedTopicKey = null;
+    let currentIndex = 0;
+    let correctCount = 0;
+    let selectedSingle = "";
+    let selectedMulti = new Set();
+    let locked = false;
+    let answerState = null; // correct | incorrect | null
+    let shuffledOptions = [];
+    let confettiTimeout = null;
+    let submissionComplete = false;
+    let lastThumbAnimatedFor = -1;
+
+    function renderTopicButtons() {
+      topicList.innerHTML = "";
+      Object.entries(TOPICS).forEach(([key, topic]) => {
+        const btn = document.createElement("button");
+        btn.className = "topic-btn" + (key === selectedTopicKey ? " active" : "");
+        btn.type = "button";
+        btn.innerHTML = `
+          <span class="topic-icon" aria-hidden="true">${topic.icon}</span>
+          <span class="topic-text">${topic.label}</span>
+          <span class="topic-arrow" aria-hidden="true">›</span>
+        `;
+        btn.addEventListener("click", () => selectTopic(key));
+        topicList.appendChild(btn);
+      });
+    }
+
+    function setLogoState() {
+      logoC.classList.toggle("visible", correctCount >= 1);
+      logoG.classList.toggle("visible", correctCount >= 2);
+      logoI.classList.toggle("visible", correctCount >= 3);
+    }
+
+    function showIntroView() {
+      document.body.classList.add('intro-mode');
+      document.body.classList.remove('quiz-mode');
+      selectedTopicKey = null;
+      currentIndex = 0;
+      correctCount = 0;
+      lastThumbAnimatedFor = -1;
+      selectedSingle = "";
+      selectedMulti = new Set();
+      locked = false;
+      answerState = null;
+      submissionComplete = false;
+      currentSession = createSession();
+      if (leadForm) leadForm.reset();
+      setSubmitMessage('Please complete all mandatory fields and accept the Terms & Conditions.');
+      if (successCard) {
+        successCard.classList.add('hide');
+        successCard.classList.remove('show');
+      }
+      if (winCard) winCard.classList.add('hide');
+      if (newsletterCard) newsletterCard.classList.add('hide');
+      if (contentCard) contentCard.classList.remove('hide');
+      renderTopicButtons();
+      updateProgress();
+      updateTopicBubble();
+      renderQuestions();
+      setLogoState();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function returnToStart() {
+      // End the current participant session and return to the central language selection.
+      window.location.href = 'index.html';
+    }
+
+
+    function openNewsletterView() {
+      if (contentCard) contentCard.classList.add('hide');
+      if (winCard) winCard.classList.add('hide');
+      if (successCard) successCard.classList.add('hide');
+      if (newsletterCard) newsletterCard.classList.remove('hide');
+      if (newsletterEmail && leadEmail && leadEmail.value) newsletterEmail.value = leadEmail.value;
+      if (newsletterMessage) { newsletterMessage.textContent = ''; newsletterMessage.className = 'newsletter-message full'; }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function backToSuccessView() {
+      if (newsletterCard) newsletterCard.classList.add('hide');
+      showSuccessView();
+    }
+
+    function saveNewsletterInterest(event) {
+      event.preventDefault();
+      const email = newsletterEmail ? newsletterEmail.value.trim() : '';
+      const consent = newsletterConsent ? newsletterConsent.checked : false;
+      if (!email || !consent) {
+        if (newsletterMessage) { newsletterMessage.textContent = 'Please enter Your email address and accept the Privacy Notice.'; newsletterMessage.className = 'newsletter-message full error'; }
+        return;
+      }
+      let entries = [];
+      try { entries = JSON.parse(localStorage.getItem(NEWSLETTER_STORAGE_KEY) || '[]'); } catch(e) { entries = []; }
+      entries.push({ timestamp:new Date().toISOString(), email, consent:'ja', source:'IBC2026 Quiz', topic:selectedTopicKey || '' });
+      localStorage.setItem(NEWSLETTER_STORAGE_KEY, JSON.stringify(entries));
+      if (newsletterMessage) { newsletterMessage.textContent = 'Thank You! Your newsletter registration has been saved locally.'; newsletterMessage.className = 'newsletter-message full success'; }
+      if (newsletterForm) newsletterForm.reset();
+    }
+
+    function createSession() {
+      return {
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        topicKey: null,
+        topicLabel: "",
+        startedAt: null,
+        completedAt: null,
+        completed: false,
+        topicPdfOpened: false,
+        wrongAnswers: 0
+      };
+    }
+
+    function showSuccessView() {
+      if (newsletterCard) newsletterCard.classList.add('hide');
+      if (contentCard) contentCard.classList.add('hide');
+      if (winCard) winCard.classList.add('hide');
+      if (successCard) {
+        successCard.classList.remove('hide');
+        successCard.classList.remove('show');
+        void successCard.offsetWidth;
+        requestAnimationFrame(() => successCard.classList.add('show'));
+      }
+      updateTopicBubble();
+      updateProgress();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function emptyAnalytics() {
+      const topicStats = {};
+      Object.keys(TOPICS).forEach((key) => {
+        topicStats[key] = { starts: 0, completions: 0 };
+      });
+      return {
+        startsTotal: 0,
+        completionsTotal: 0,
+        pdfViews: { ai: 0, cyber: 0, cloud: 0, integration: 0 },
+        wrongByQuestion: {},
+        topicStats
+      };
+    }
+
+    function loadLeads() {
+      try {
+        const raw = localStorage.getItem(LEADS_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        return [];
+      }
+    }
+
+    function saveLeads() {
+      localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(leads));
+      updateLeadUi();
+    }
+
+    function loadAnalytics() {
+      try {
+        const raw = localStorage.getItem(ANALYTICS_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : emptyAnalytics();
+        const base = emptyAnalytics();
+        return {
+          ...base,
+          ...parsed,
+          pdfViews: { ...base.pdfViews, ...(parsed.pdfViews || {}) },
+          topicStats: { ...base.topicStats, ...(parsed.topicStats || {}) },
+          wrongByQuestion: { ...(parsed.wrongByQuestion || {}) }
+        };
+      } catch (error) {
+        return emptyAnalytics();
+      }
+    }
+
+    function saveAnalytics() {
+      localStorage.setItem(ANALYTICS_STORAGE_KEY, JSON.stringify(analytics));
+    }
+
+    function recordTopicStart(key) {
+      const topic = TOPICS[key];
+      currentSession = createSession();
+      currentSession.topicKey = key;
+      currentSession.topicLabel = topic ? topic.label : key;
+      currentSession.startedAt = new Date().toISOString();
+      analytics.startsTotal += 1;
+      if (!analytics.topicStats[key]) analytics.topicStats[key] = { starts: 0, completions: 0 };
+      analytics.topicStats[key].starts += 1;
+      saveAnalytics();
+    }
+
+    function recordCompletion() {
+      if (currentSession.completed) return;
+      currentSession.completed = true;
+      currentSession.completedAt = new Date().toISOString();
+      analytics.completionsTotal += 1;
+      const key = currentSession.topicKey || selectedTopicKey;
+      if (key) {
+        if (!analytics.topicStats[key]) analytics.topicStats[key] = { starts: 0, completions: 0 };
+        analytics.topicStats[key].completions += 1;
+      }
+      saveAnalytics();
+    }
+
+    function recordWrongAnswer(question) {
+      const label = `${currentTopic()?.label || ""}: ${question.question}`;
+      analytics.wrongByQuestion[label] = (analytics.wrongByQuestion[label] || 0) + 1;
+      currentSession.wrongAnswers += 1;
+      saveAnalytics();
+    }
+
+    function recordPdfOpen(topicKey) {
+      if (!analytics.pdfViews[topicKey]) analytics.pdfViews[topicKey] = 0;
+      analytics.pdfViews[topicKey] += 1;
+      if (topicKey === 'ai') currentSession.topicPdfOpened = true;
+      saveAnalytics();
+    }
+
+    function updateLeadUi() {
+      if (!exportStatus || !exportExcelBtn) return;
+      const count = leads.length;
+      if (count === 0) {
+        exportStatus.textContent = 'No entries saved yet.';
+        exportExcelBtn.disabled = true;
+      } else {
+        exportStatus.textContent = `${count} entr${count === 1 ? 'y' : 'ies'} saved locally. Export is ready.`;
+        exportExcelBtn.disabled = false;
+      }
+      renderAdmin();
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '';
+      try {
+        return new Intl.DateTimeFormat('de-DE', {
+          dateStyle: 'short', timeStyle: 'short'
+        }).format(new Date(value));
+      } catch (error) {
+        return value;
+      }
+    }
+
+    function getLeadRows() {
+      return leads.map((lead, index) => ({
+        nr: index + 1,
+        timestamp: lead.timestamp || '',
+        name: `${lead.firstName || ''} ${lead.lastName || ''}`.trim(),
+        firstName: lead.firstName || '',
+        lastName: lead.lastName || '',
+        company: lead.company || '',
+        email: lead.email || '',
+        topic: lead.topicLabel || '',
+        topicKey: lead.topicKey || '',
+        topicPdfOpened: lead.topicPdfOpened ? 'Ja' : 'Nein',
+        wrongAnswers: lead.wrongAnswers ?? '',
+        consent: lead.consent ? 'Ja' : 'Nein'
+      }));
+    }
+
+    function renderBarList(containerId, rows) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      if (!rows.length) {
+        container.innerHTML = '<div class="submit-message">Noch keine Daten vorhanden.</div>';
+        return;
+      }
+      const max = Math.max(...rows.map((row) => row.value), 1);
+      container.innerHTML = rows.map((row) => {
+        const width = Math.round((row.value / max) * 100);
+        return `
+          <div class="bar-row">
+            <div>${escapeHtml(row.label)}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${width}%"></div></div>
+            <strong>${row.value}</strong>
+          </div>`;
+      }).join('');
+    }
+
+    function renderAdmin() {
+      const leadRows = getLeadRows();
+      const statLeads = document.getElementById('statLeads');
+      const statStarts = document.getElementById('statStarts');
+      const statCompletions = document.getElementById('statCompletions');
+      const statPdfAi = document.getElementById('statPdfAi');
+      const tableBody = document.getElementById('leadTableBody');
+      if (!statLeads || !tableBody) return;
+
+      statLeads.textContent = leads.length;
+      statStarts.textContent = analytics.startsTotal || 0;
+      statCompletions.textContent = analytics.completionsTotal || 0;
+      statPdfAi.textContent = Object.values(analytics.pdfViews || {}).reduce((sum, value) => sum + Number(value || 0), 0);
+
+      const topicRows = Object.entries(TOPICS).map(([key, topic]) => ({
+        label: topic.label,
+        value: analytics.topicStats?.[key]?.starts || 0
+      }));
+      renderBarList('topicAnalytics', topicRows);
+
+      const wrongRows = Object.entries(analytics.wrongByQuestion || {})
+        .map(([label, value]) => ({ label, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 8);
+      renderBarList('wrongAnalytics', wrongRows);
+
+      if (!leadRows.length) {
+        tableBody.innerHTML = '<tr><td colspan="6">No entries saved yet.</td></tr>';
+      } else {
+        tableBody.innerHTML = leadRows.slice().reverse().map((lead) => `
+          <tr>
+            <td>${escapeHtml(formatDateTime(lead.timestamp))}</td>
+            <td>${escapeHtml(lead.name)}</td>
+            <td>${escapeHtml(lead.company)}</td>
+            <td>${escapeHtml(lead.email)}</td>
+            <td>${escapeHtml(lead.topic)}</td>
+            <td>${escapeHtml(lead.topicPdfOpened)}</td>
+          </tr>`).join('');
+      }
+    }
+
+    function openAdminModal() {
+      renderAdmin();
+      adminModal.classList.add('show');
+      adminModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeAdminModal() {
+      adminModal.classList.remove('show');
+      adminModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function setSubmitMessage(text, type = '') {
+      if (!submitMessage) return;
+      submitMessage.textContent = text;
+      submitMessage.className = `submit-message${type ? ' ' + type : ''}`;
+    }
+
+    function readLeadFormValues() {
+      return {
+        firstName: leadFirstName.value.trim(),
+        lastName: leadLastName.value.trim(),
+        company: leadCompany.value.trim(),
+        email: leadEmail.value.trim(),
+        consent: leadConsent.checked
+      };
+    }
+
+    function saveLead(event) {
+      event.preventDefault();
+      const values = readLeadFormValues();
+      if (!values.firstName || !values.lastName || !values.company || !values.email || !values.consent) {
+        setSubmitMessage('Please complete all mandatory fields, accept the Terms & Conditions and confirm that You are at least 18 years old.', 'error');
+        return;
+      }
+      const topic = currentTopic();
+      const entry = {
+        timestamp: new Date().toISOString(),
+        sessionId: currentSession.id,
+        topicKey: selectedTopicKey,
+        topicLabel: topic ? topic.label : '',
+        firstName: values.firstName,
+        lastName: values.lastName,
+        company: values.company,
+        email: values.email,
+        consent: 'ja',
+        ageConfirmed: 'ja',
+        termsVersion: 'CGI Competition IBC - Terms & Conditions (DE/EN)',
+        topicPdfOpened: Boolean(currentSession.topicPdfOpened),
+        wrongAnswers: currentSession.wrongAnswers || 0
+      };
+      leads.push(entry);
+      saveLeads();
+      setSubmitMessage('Entry saved successfully. Thank You!', 'success');
+      leadForm.reset();
+      submissionComplete = true;
+      showSuccessView();
+      renderQuestions();
+    }
+
+    function xmlEscape(value) {
+      return String(value ?? '').replace(/[<>&'"]/g, (ch) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' }[ch]));
+    }
+
+    function columnName(index) {
+      let name = '';
+      let n = index + 1;
+      while (n > 0) {
+        const r = (n - 1) % 26;
+        name = String.fromCharCode(65 + r) + name;
+        n = Math.floor((n - 1) / 26);
+      }
+      return name;
+    }
+
+    function sheetXml(rows) {
+      const body = rows.map((row, rIdx) => {
+        const cells = row.map((value, cIdx) => {
+          const ref = `${columnName(cIdx)}${rIdx + 1}`;
+          return `<c r="${ref}" t="inlineStr"><is><t>${xmlEscape(value)}</t></is></c>`;
+        }).join('');
+        return `<row r="${rIdx + 1}">${cells}</row>`;
+      }).join('');
+      return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetData>${body}</sheetData></worksheet>`;
+    }
+
+    function crc32(bytes) {
+      let crc = ~0;
+      for (let i = 0; i < bytes.length; i++) {
+        crc ^= bytes[i];
+        for (let j = 0; j < 8; j++) crc = (crc >>> 1) ^ (0xEDB88320 & -(crc & 1));
+      }
+      return (~crc) >>> 0;
+    }
+
+    function uint16(n) { return [n & 255, (n >>> 8) & 255]; }
+    function uint32(n) { return [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255]; }
+
+    function makeZip(files) {
+      const encoder = new TextEncoder();
+      const chunks = [];
+      const central = [];
+      let offset = 0;
+      files.forEach((file) => {
+        const nameBytes = encoder.encode(file.name);
+        const data = typeof file.content === 'string' ? encoder.encode(file.content) : file.content;
+        const crc = crc32(data);
+        const localHeader = new Uint8Array([
+          ...uint32(0x04034b50), ...uint16(20), ...uint16(0), ...uint16(0), ...uint16(0), ...uint16(0),
+          ...uint32(crc), ...uint32(data.length), ...uint32(data.length), ...uint16(nameBytes.length), ...uint16(0)
+        ]);
+        chunks.push(localHeader, nameBytes, data);
+        central.push({ nameBytes, crc, size: data.length, offset });
+        offset += localHeader.length + nameBytes.length + data.length;
+      });
+      let centralSize = 0;
+      central.forEach((entry) => {
+        const header = new Uint8Array([
+          ...uint32(0x02014b50), ...uint16(20), ...uint16(20), ...uint16(0), ...uint16(0), ...uint16(0), ...uint16(0),
+          ...uint32(entry.crc), ...uint32(entry.size), ...uint32(entry.size), ...uint16(entry.nameBytes.length), ...uint16(0), ...uint16(0),
+          ...uint16(0), ...uint16(0), ...uint32(0), ...uint32(entry.offset)
+        ]);
+        chunks.push(header, entry.nameBytes);
+        centralSize += header.length + entry.nameBytes.length;
+      });
+      const end = new Uint8Array([
+        ...uint32(0x06054b50), ...uint16(0), ...uint16(0), ...uint16(central.length), ...uint16(central.length),
+        ...uint32(centralSize), ...uint32(offset), ...uint16(0)
+      ]);
+      chunks.push(end);
+      return new Blob(chunks, { type: 'application/zip' });
+    }
+
+    function buildXlsxBlob() {
+      const leadRows = [
+        ['No.', 'Timestamp', 'First name', 'Last name', 'Company', 'Email', 'Topic', 'Topic PDF opened', 'Incorrect answers', 'Terms/Privacy accepted', '18+ confirmed'],
+        ...getLeadRows().map((lead) => [lead.nr, lead.timestamp, lead.firstName, lead.lastName, lead.company, lead.email, lead.topic, lead.topicPdfOpened, lead.wrongAnswers, lead.consent, lead.ageConfirmed || lead.consent])
+      ];
+      const topicRows = [['Topic', 'Started', 'Completed']].concat(Object.entries(TOPICS).map(([key, topic]) => [
+        topic.label,
+        analytics.topicStats?.[key]?.starts || 0,
+        analytics.topicStats?.[key]?.completions || 0
+      ]));
+      const wrongRows = [['Question', 'Incorrect answers']].concat(Object.entries(analytics.wrongByQuestion || {}).map(([q, count]) => [q, count]));
+      const analyticsRows = [
+        ['Kennzahl', 'Wert'],
+        ['Entries', leads.length],
+        ['Startede Quizze', analytics.startsTotal || 0],
+        ['Completede Quizze', analytics.completionsTotal || 0],
+        ['PDF opens', analytics.pdfViews?.ai || 0],
+        [],
+        ...topicRows,
+        [],
+        ...wrongRows
+      ];
+
+      return makeZip([
+        { name: '[Content_Types].xml', content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>` },
+        { name: '_rels/.rels', content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
+        { name: 'xl/_rels/workbook.xml.rels', content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
+        { name: 'xl/workbook.xml', content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Entries" sheetId="1" r:id="rId1"/><sheet name="Analytics" sheetId="2" r:id="rId2"/></sheets></workbook>` },
+        { name: 'xl/styles.xml', content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="1"><font><sz val="11"/><name val="Aptos"/></font></fonts><fills count="1"><fill><patternFill patternType="none"/></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs></styleSheet>` },
+        { name: 'xl/worksheets/sheet1.xml', content: sheetXml(leadRows) },
+        { name: 'xl/worksheets/sheet2.xml', content: sheetXml(analyticsRows) }
+      ]);
+    }
+
+    function downloadBlob(blob, fileName) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1200);
+    }
+
+    function exportXlsx() {
+      if (!leads.length) {
+        updateLeadUi();
+        return;
+      }
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+      downloadBlob(buildXlsxBlob(), `cgi-competition-and-analytics-${stamp}.xlsx`);
+    }
+
+    function exportCsv() {
+      const rows = [
+        ['Timestamp', 'First name', 'Last name', 'Company', 'Email', 'Topic', 'Topic PDF opened', 'Incorrect answers', 'Terms/Privacy accepted', '18+ confirmed'],
+        ...getLeadRows().map((lead) => [lead.timestamp, lead.firstName, lead.lastName, lead.company, lead.email, lead.topic, lead.topicPdfOpened, lead.wrongAnswers, lead.consent, lead.ageConfirmed || lead.consent])
+      ];
+      const csv = rows.map((row) => row.map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(';')).join('\n');
+      const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: 'text/csv;charset=utf-8' });
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+      downloadBlob(blob, `cgi-competition-export-${stamp}.csv`);
+    }
+
+    function updateProgress() {
+      progressLabel.textContent = "Your progress";
+      progressCount.textContent = progressCopy();
+      updateThumbs();
+      setLogoState();
+    }
+
+    
+function updateTopicBubble() {
+  const topic = currentTopic();
+  const resource = TOPIC_RESOURCES[selectedTopicKey] || TOPIC_RESOURCES.ai;
+  const showBubble = !!topic && correctCount < 3;
+  aiBubble.classList.toggle('hide', !showBubble);
+  if (!showBubble) return;
+
+  const titleEl = document.getElementById('topicBubbleTitle');
+  const textEl = document.getElementById('topicBubbleText');
+
+  if (titleEl) titleEl.textContent = resource.title || topic.label;
+  if (textEl) {
+    textEl.innerHTML = `${escapeHtml(resource.bubbleCopy || 'Hier gibt es einen ersten Einblick.')} <span class="bubble-link">Open →</span>`;
+  }
+  aiBubble.setAttribute('aria-label', `Mehr über ${topic.label} erfahren`);
+}
+
+function currentTopic()
+ {
+      return selectedTopicKey ? TOPICS[selectedTopicKey] : null;
+    }
+
+    function currentQuestion() {
+      const topic = currentTopic();
+      return topic ? topic.questions[currentIndex] : null;
+    }
+
+    function shuffleArray(values) {
+      const arr = [...values];
+      for (let i = arr.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function progressCopy() {
+      if (!selectedTopicKey) return "Choose a topic, then answer 3 questions.";
+      if (correctCount <= 0) return "0/3 correct – answer all 3 questions correctly.";
+      if (correctCount === 1) return "1/3 correct – 2 to go.";
+      if (correctCount === 2) return "2/3 correct – 1 to go.";
+      return "3/3 correct – prize draw unlocked.";
+    }
+
+    function updateThumbs() {
+      const thumbs = Array.from(progressBar?.querySelectorAll('.thumb-step') || []);
+      const activeIndex = Math.max(0, correctCount - 1);
+
+      thumbs.forEach((thumb, index) => {
+        const filled = index < correctCount;
+        thumb.classList.toggle('filled', filled);
+        thumb.classList.toggle('active', filled && index === activeIndex);
+        thumb.classList.remove('pop');
+      });
+
+      if (correctCount > 0 && lastThumbAnimatedFor !== correctCount) {
+        const thumb = thumbs[activeIndex];
+        if (thumb) {
+          thumb.classList.add('pop');
+          window.setTimeout(() => thumb.classList.remove('pop'), 520);
+        }
+        lastThumbAnimatedFor = correctCount;
+      }
+    }
+
+    function prepareQuestionOptions() {
+      const q = currentQuestion();
+      shuffledOptions = q ? shuffleArray(q.options) : [];
+    }
+
+    function renderQuestions() {
+      const topic = currentTopic();
+      if (!topic) {
+        if (successCard) {
+          successCard.classList.add('hide');
+          successCard.classList.remove('show');
+        }
+        topicBanner.textContent = "Please choose a topic first.";
+        questionTitle.textContent = "Choose a topic to get started.";
+        questionSubtitle.textContent = "The three questions are based on Your selected topic.";
+        answers.innerHTML = "";
+        hint.className = 'hint feedback-panel state-neutral'; hint.innerHTML = '<span class="dot">?</span><span>Select an answer and then check it.</span>';
+        nextButton.classList.add("hide");
+        updateTopicBubble();
+        return;
+      }
+
+      if (submissionComplete) {
+        showSuccessView();
+        return;
+      }
+
+      if (correctCount >= 3) {
+        contentCard.classList.add("hide");
+        winCard.classList.remove("hide");
+        if (successCard) {
+          successCard.classList.add('hide');
+          successCard.classList.remove('show');
+        }
+        const confettiLayer = document.getElementById('confettiLayer');
+        if (confettiLayer) confettiLayer.classList.remove('hide');
+        updateProgress();
+        updateTopicBubble();
+        return;
+      }
+
+      contentCard.classList.remove("hide");
+      winCard.classList.add("hide");
+      updateTopicBubble();
+
+      const q = currentQuestion();
+      if (!q) return;
+      if (!shuffledOptions.length || shuffledOptions.length !== q.options.length) prepareQuestionOptions();
+      topicBanner.textContent = topic.label;
+      questionTitle.textContent = `${currentIndex + 1}. ${q.question}`;
+      questionSubtitle.textContent = topic.questions.length === 3
+        ? ""
+        : "Select an answer, or multiple answers if multiple selection is enabled.";
+      questionSubtitle.classList.toggle("hide", topic.questions.length === 3);
+
+      renderAnswers();
+      updateHint(q);
+      nextButton.classList.toggle("hide", true);
+      updateProgress();
+    }
+
+    function updateHint(question) {
+      if (answerState === "correct") {
+        hint.className = 'hint feedback-panel state-correct'; hint.innerHTML = `<span class="dot">✓</span><span><strong>Correct!</strong> ${question.explanation}</span>`;
+      } else if (answerState === "incorrect") {
+        hint.className = 'hint feedback-panel state-wrong'; hint.innerHTML = `<span class="dot">×</span><span><strong>Incorrect.</strong> Please check Your selection.</span>`;
+      } else {
+        hint.className = 'hint feedback-panel state-neutral'; hint.innerHTML = `<span class="dot">?</span><span>${question.mode === "multi" ? "Select all correct options." : "Select an answer and then check it."}</span>`;
+      }
+    }
+
+
+    
+function openTopicModal() {
+  const topic = currentTopic();
+  if (!topic) return;
+
+  const resource = TOPIC_RESOURCES[selectedTopicKey] || TOPIC_RESOURCES.ai;
+  const titleEl = document.getElementById('aiModalTitle');
+  const textEl = document.getElementById('aiModalText');
+  const linkEl = document.getElementById('aiPdfLink');
+
+  if (titleEl) titleEl.textContent = resource.modalTitle || `Mehr über ${topic.label}`;
+  if (textEl) textEl.textContent = resource.modalText || 'Hier gibt es einen ersten Einblick in das passende CGI Offering.';
+  if (linkEl) {
+    linkEl.href = resource.pdfPath || 'pdf/ai-strategy-en.pdf';
+    linkEl.textContent = 'PDF öffnen';
+  }
+
+  aiModal.classList.add('show');
+  aiModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeTopicModalFn()
+ {
+      aiModal.classList.remove('show');
+      aiModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function renderAnswers() {
+      const q = currentQuestion();
+      answers.innerHTML = "";
+
+      if (!q) return;
+
+      if (q.mode === "single") {
+        shuffledOptions.forEach((opt) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "answer" + (selectedSingle === opt ? " selected" : "");
+          if (answerState === "correct" && opt === q.answer) btn.classList.add("correct");
+          if (answerState === "incorrect" && selectedSingle === opt && opt !== q.answer) btn.classList.add("incorrect");
+          btn.innerHTML = `<span class="radio" aria-hidden="true"></span><span class="text">${opt}</span>`;
+          btn.addEventListener("click", () => {
+            if (locked) return;
+            selectedSingle = opt;
+            answerState = null;
+            renderQuestions();
+          });
+          answers.appendChild(btn);
+        });
+      } else {
+        shuffledOptions.forEach((opt) => {
+          const checked = selectedMulti.has(opt);
+          const label = document.createElement("button");
+          label.type = "button";
+          label.className = "answer" + (checked ? " selected" : "");
+          label.innerHTML = `<span class="radio" aria-hidden="true"></span><span class="text">${opt}</span>`;
+          label.addEventListener("click", () => {
+            if (locked) return;
+            if (selectedMulti.has(opt)) selectedMulti.delete(opt);
+            else selectedMulti.add(opt);
+            answerState = null;
+            renderQuestions();
+          });
+          answers.appendChild(label);
+        });
+      }
+    }
+
+    function checkAnswer() {
+      const q = currentQuestion();
+      if (!q || locked) return;
+
+      let correct = false;
+      if (q.mode === "single") {
+        correct = selectedSingle === q.answer;
+      } else {
+        const arr = Array.from(selectedMulti).sort();
+        const answer = [...q.answer].sort();
+        correct = arr.length === answer.length && arr.every((v, i) => v === answer[i]);
+      }
+
+      if (correct) {
+        locked = true;
+        answerState = "correct";
+        updateHint(q);
+        renderAnswers();
+
+        setTimeout(() => {
+          correctCount += 1;
+          selectedSingle = "";
+          selectedMulti = new Set();
+          locked = false;
+          answerState = null;
+
+          if (correctCount >= 3) {
+            recordCompletion();
+            if (confettiTimeout) window.clearTimeout(confettiTimeout);
+            const layer = document.getElementById('confettiLayer');
+            if (layer) {
+              const colors = ['#e31937', '#5236ab', '#f5f7ff', '#ff6a00'];
+              const pieces = Array.from({ length: 42 }, (_, idx) => {
+                const piece = document.createElement('span');
+                const size = 8 + Math.floor(Math.random() * 8);
+                const drift = Math.floor(Math.random() * 220) - 110;
+                const spin = (360 + Math.floor(Math.random() * 720)) * (Math.random() > 0.5 ? 1 : -1);
+                piece.className = 'confetti-piece ' + (idx % 3 === 0 ? 'square' : 'slim');
+                piece.style.setProperty('--left', `${Math.random() * 100}%`);
+                piece.style.setProperty('--delay', `${Math.floor(Math.random() * 650)}ms`);
+                piece.style.setProperty('--duration', `${1800 + Math.floor(Math.random() * 900)}ms`);
+                piece.style.setProperty('--size', `${size}px`);
+                piece.style.setProperty('--drift', `${drift}px`);
+                piece.style.setProperty('--spin', `${spin}deg`);
+                piece.style.setProperty('--piece-color', colors[idx % colors.length]);
+                layer.appendChild(piece);
+                return piece;
+              });
+              layer.classList.remove('hide');
+              confettiTimeout = window.setTimeout(() => {
+                pieces.forEach((el) => el.remove());
+                layer.classList.add('hide');
+              }, 2600);
+            }
+            renderQuestions();
+            return;
+          }
+          currentIndex += 1;
+          prepareQuestionOptions();
+          updateProgress();
+          renderQuestions();
+        }, 900);
+      } else {
+        recordWrongAnswer(q);
+        answerState = "incorrect";
+        updateHint(q);
+        renderAnswers();
+      }
+    }
+
+    function selectTopic(key) {
+      selectedTopicKey = key;
+      recordTopicStart(key);
+      document.body.classList.remove('intro-mode');
+      document.body.classList.add('quiz-mode');
+      currentIndex = 0;
+      correctCount = 0;
+      lastThumbAnimatedFor = -1;
+      selectedSingle = "";
+      selectedMulti = new Set();
+      locked = false;
+      answerState = null;
+
+      contentCard.classList.remove("hide");
+      winCard.classList.add("hide");
+      topicBanner.textContent = TOPICS[key].label;
+      nextButton.classList.add("hide");
+      prepareQuestionOptions();
+      updateProgress();
+      renderTopicButtons();
+      updateTopicBubble();
+      renderQuestions();
+    }
+
+    const checkButton = document.createElement("button");
+    checkButton.className = "primary";
+    checkButton.type = "button";
+    checkButton.textContent = "Check answer";
+    checkButton.addEventListener("click", checkAnswer);
+    document.querySelector(".controls").prepend(checkButton);
+
+    nextButton.textContent = "Continue";
+
+    aiBubble.addEventListener('click', openTopicModal);
+    if (aiPdfLink) aiPdfLink.addEventListener('click', () => recordPdfOpen(selectedTopicKey || 'ai'));
+    if (leadForm) leadForm.addEventListener('submit', saveLead);
+    if (exportExcelBtn) exportExcelBtn.addEventListener('click', exportXlsx);
+    if (adminOpen) adminOpen.addEventListener('click', openAdminModal);
+    if (adminClose) adminClose.addEventListener('click', closeAdminModal);
+    if (adminExportXlsx) adminExportXlsx.addEventListener('click', exportXlsx);
+    if (adminExportCsv) adminExportCsv.addEventListener('click', exportCsv);
+    if (adminClearLeads) adminClearLeads.addEventListener('click', () => {
+      if (confirm('Delete all locally saved entries?')) {
+        leads = [];
+        saveLeads();
+      }
+    });
+    if (adminResetStats) adminResetStats.addEventListener('click', () => {
+      if (confirm('Reset analytics data?')) {
+        analytics = emptyAnalytics();
+        saveAnalytics();
+        renderAdmin();
+      }
+    });
+    const backToStartBtn = document.getElementById('backToStartBtn');
+    if (backToStartBtn) backToStartBtn.addEventListener('click', returnToStart);
+    if (newsletterCta) newsletterCta.addEventListener('click', openNewsletterView);
+    if (newsletterForm) newsletterForm.addEventListener('submit', saveNewsletterInterest);
+    if (newsletterBackBtn) newsletterBackBtn.addEventListener('click', backToSuccessView);
+    if (newsletterNextParticipantBtn) newsletterNextParticipantBtn.addEventListener('click', returnToStart);
+    closeAiModal.addEventListener('click', closeTopicModalFn);
+    aiModal.addEventListener('click', (event) => {
+      if (event.target === aiModal) closeTopicModalFn();
+    });
+    adminModal.addEventListener('click', (event) => {
+      if (event.target === adminModal) closeAdminModal();
+    });
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeTopicModalFn();
+        closeAdminModal();
+      }
+      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'a') {
+        document.body.classList.add('admin-view');
+        openAdminModal();
+      }
+    });
+
+    renderTopicButtons();
+    renderQuestions();
+    updateProgress();
+    updateTopicBubble();
+    setLogoState();
+    updateLeadUi();
+    renderAdmin();
+  </script>
+</body>
+</html>
